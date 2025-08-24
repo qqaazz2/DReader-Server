@@ -1,0 +1,63 @@
+version: "3"
+
+services:
+  redis:
+    container_name: container_redis
+    image: "redis:latest"
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "6379:6379"
+    command: redis-server
+
+  mysql:
+    container_name: container_mysql
+    image: "mysql:latest"
+    environment:
+      - TZ=Asia/Shanghai
+      - MYSQL_ROOT_PASSWORD=h9R98yyD
+      - MYSQL_ROOT_HOST=%
+    ports:
+      - "3306:3306"
+    command: [
+        '--lower-case-table-names=1'
+    ]
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD","mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  service_springboot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Shanghai
+      #数据库
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/dreaderserver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: h9R98yyD
+      #数据库
+
+      #redis
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      #redis
+
+      #minio
+      MINIO_URL: http://192.168.1.6:9090
+      MINIO_BUCKET: dreader-server
+      MINIO_ACCESS: admin
+      MINIO_SECRET: B1zWgSyFyY
+      #minio
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./files/:/files/

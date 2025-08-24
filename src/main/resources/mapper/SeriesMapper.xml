@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.DReaderServer.mapper.book.SeriesMapper">
+
+    <resultMap id="seriesList" type="com.example.DReaderServer.dto.book.SeriesListDTO">
+        <id column="id" property="id"/>
+        <result column="author" property="author"/>
+        <result column="name" property="name"/>
+        <result column="over_status" property="overStatus"/>
+        <result column="status" property="status"/>
+        <result column="love" property="love"/>
+        <result column="profile" property="profile"/>
+        <result column="last_read_time" property="lastReadTime"/>
+        <result column="num" property="num"/>
+        <result column="cover" property="cover"/>
+        <result column="files_id" property="filesId"/>
+    </resultMap>
+
+    <select id="getList" resultMap="seriesList"
+            parameterType="com.example.DReaderServer.dto.book.SeriesListQueryCondition">
+        SELECT
+            series.id,
+            series.author,
+            series.over_status,
+            series.`status`,
+            series.love,
+            series.`profile`,
+            series.last_read_time,
+            series.num,
+            modifiable_name as `name`,
+            series.cover,
+            series.files_id
+        FROM
+            series
+        INNER JOIN files ON series.files_id = files.id AND files.deleted = 1
+        WHERE series.deleted = 1
+        <if test="love != null and love != ''">
+            and love = #{love}
+        </if>
+        <if test="name != null and name != ''">
+            <bind name="pattern" value="'%' + name + '%'"/>
+            and `modifiable_name` LIKE #{pattern}
+        </if>
+        <if test="status != null and status != ''">
+            and series.`status` = #{status}
+        </if>
+        <if test="overStatus != null and overStatus != ''">
+            and over_status = #{overStatus}
+        </if>
+        <if test="sortField != null and sortField != ''">
+            <choose>
+                <when test="sortField == 'name'">
+                    ORDER BY modifiable_name ${sortOrder}
+                </when>
+                <when test="sortField == 'lastReadTime'">
+                    ORDER BY series.last_read_time ${sortOrder}
+                </when>
+                <when test="sortField == 'createTime'">
+                    ORDER BY series.add_time ${sortOrder}
+                </when>
+            </choose>
+        </if>
+        LIMIT #{offset},#{limit}
+    </select>
+    <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.book.SeriesListQueryCondition">
+        SELECT count(*) FROM series
+        INNER JOIN files ON series.files_id = files.id AND files.deleted = 1
+        WHERE series.deleted = 1
+        <if test="love != null and love != ''">
+            and love = #{love}
+        </if>
+        <if test="name != null and name != ''">
+            <bind name="pattern" value="'%' + name + '%'"/>
+            and `modifiable_name` LIKE #{pattern}
+        </if>
+        <if test="status != null and status != ''">
+            and series.`status` = #{status}
+        </if>
+        <if test="overStatus != null and overStatus != ''">
+            and over_status = #{overStatus}
+        </if>
+    </select>
+
+    <select id="getOne" resultMap="seriesList" parameterType="int">
+        SELECT
+        series.id,
+        modifiable_name as `name`,
+        series.author,
+        series.over_status,
+        series.`status`,
+        series.love,
+        series.`profile`,
+        series.last_read_time,
+        series.num,
+        series.files_id,
+        series.cover
+        FROM
+        series
+        INNER JOIN files ON series.files_id = files.id AND files.deleted = 1
+        WHERE series.deleted = 1
+        AND series.id = #{id}
+    </select>
+</mapper>
