@@ -1,0 +1,95 @@
+# IDE 相关临时文件和配置
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+target/
+.build/
+bin/
+gen/
+ 
+# Eclipse 相关
+.settings/
+.metadata/
+.classpath
+.project
+*.tmp
+*.bak
+*.swp
+*.swo
+*.log
+*.tmp.*
+*.backup
+*.stackdump
+.recommenders/
+ 
+# NetBeans 相关
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+ 
+# Maven 编译输出及依赖
+mvnw
+mvnw.cmd
+.mvn/wrapper/
+target/
+!target/*.jar # 如果你需要保留生成的 jar 文件，可以取消这一行前的感叹号 (!)
+dependency-reduced-pom.xml
+.build/reports/binary/*
+ 
+# Gradle 编译输出及依赖
+.gradle/
+build/
+.gradle.kts
+!build/libs/*.jar # 如果你需要保留 Gradle 构建的 jar 文件，可以取消这一行前的感叹号 (!)
+ 
+# IntelliJ IDEA
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/libraries
+.idea/modules.xml
+.idea/vcs.xml
+.idea/inspectionProfiles/
+.idea/misc.xml
+.idea/projectCodeStyle.xml
+.idea/uiDesigner.xml
+*.idea_modules/
+ 
+# Java 编译产生的字节码和缓存文件
+*.class
+*.war
+*.ear
+*.sar
+*.rar
+*.codemodel
+*.hprof
+hs_err_pid*
+javacardcap.*
+ 
+# JUnit 临时文件
+*.junit/
+ 
+# 其他操作系统特定文件
+.DS_Store
+thumbs.db
+ehthumbs.db
+Icon?
+._*
+ 
+# Local 环境配置文件
+local.properties
+*.properties.local
+.env.local
+ 
+# 日志文件
+logs/
+*.log
+ 
+# 个人 IDE 编辑器配置
+.vscode/
+*.sublime-project
+*.sublime-workspace

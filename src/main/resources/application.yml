@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/dreaderserver
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password:
+      timeout: 3000ms
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+  jackson:
+    date-format: yyyy-MM-dd HH:mm
+    time-zone: Asia/Shanghai
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 2
+      logic-not-delete-value: 1
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+token:
+  header: "Authorization"
+  expireTime: 10080
+  secret: "I@g2hUQi7Eqk68v&Ft0sMMVdV8xfZ&uwPSvR"
+file:
+  upload: "/files/"
+  meta: "metaData.json"
+server:
+  tomcat:
+    max-http-form-post-size: 200MB
+  port: 8081
+minio:
+  url: http://192.168.1.6:9090
+  bucket: dreader-server
+  access: admin
+  secret: B1zWgSyFyY
