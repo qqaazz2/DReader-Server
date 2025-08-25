@@ -51,7 +51,7 @@ public abstract class AsyncTask {
     ExecutorService executor = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(20000));
     List<CheckFileTask> list = new ArrayList<>();
     public static Files coverFiles = new Files();
-    List<String> skipFolder = new ArrayList<>(List.of("#recycle", "@eaDir", "@Recycle","metaData.json"));
+    List<String> skipFolder = new ArrayList<>(List.of("#recycle", "@eaDir", "@Recycle", "metaData.json"));
     Map<String, List<Files>> createFilesMap = new HashMap<>();
 
     Map<String, Integer> folders = new HashMap<>();//文件夹的FilesID;
@@ -199,10 +199,13 @@ public abstract class AsyncTask {
                 FileTaskResult fileTaskResult = future.get();
                 String parentPath = fileTaskResult.getParentPath();
                 Files files = fileTaskResult.getFiles();
+                if (fileTaskResult.getType() == 3) continue;
+
                 if (fileTaskResult.getType() == 2) {
                     renameFiles.add(fileTaskResult.getFiles());
                     continue;
                 }
+
 
                 List<Files> list = new ArrayList<>();
                 if (createFilesMap.containsKey(parentPath)) list = createFilesMap.get(parentPath);
@@ -211,6 +214,7 @@ public abstract class AsyncTask {
             }
             //递归将文件（子Files）放到对应的文件夹（父Files）下
             createFileDeep(createFiles);
+            createFilesMap.values().forEach(item -> createFiles.addAll(item));
             // 所有任务完成后继续执行后续操作
             rename(); // 重命名文件操作
             if (!createFiles.isEmpty()) {
@@ -243,6 +247,7 @@ public abstract class AsyncTask {
                 List<Files> child = files.getChild();
                 child.addAll(createFilesMap.get(files.getFilePath()));
                 files.setChild(child);
+                createFilesMap.remove(files.getFilePath());
             }
         }
         checkInterrupted();
@@ -339,13 +344,14 @@ class CheckFileTask implements Callable<FileTaskResult> {
     @Override
     public FileTaskResult call() throws Exception {
         if (Thread.currentThread().isInterrupted()) throw new TaskInterruptedException();
-        short filesType = 1;
+        short filesType = 3;
         //判断这个文件是否数据库中
         String renamePath = type == 2 ? parentPath + File.separator + file.getName() : file.getPath();
         if (fliesData != null) {
             String fileHash = filesUtils.getFileChecksum(file);
             //判断文件hash是否相同 不相同则为新文件
             if (!fliesData.getHash().equals(fileHash)) {
+                filesType = 1;
                 fliesData = filesUtils.createFiles(file, contentType, currentFolderID, order);
             } else {
                 //判断上级文件夹是否重命名了 重命名就更改文件路径
@@ -357,6 +363,7 @@ class CheckFileTask implements Callable<FileTaskResult> {
             }
         } else {
             //不在 则为新的文件
+            filesType = 1;
             fliesData = filesUtils.createFiles(file, contentType, currentFolderID, order);
         }
         return new FileTaskResult(filesType, fliesData, parentPath);
