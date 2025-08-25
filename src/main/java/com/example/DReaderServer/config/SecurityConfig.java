@@ -8,6 +8,7 @@ import com.example.DReaderServer.service.TokenService;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,7 +62,6 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/user/login").permitAll()
                         .requestMatchers("/user/code").permitAll()
-//                        .requestMatchers("/files/**").permitAll()
                         .anyRequest().authenticated());
         return httpSecurity.build();
     }
