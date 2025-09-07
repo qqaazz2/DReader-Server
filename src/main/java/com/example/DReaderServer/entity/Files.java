@@ -33,6 +33,7 @@ public class Files {
     private String hash;
     private String cover;
     private Integer sort;
+    private String inode;
     @TableField(exist = false)
     private File file;
     @TableField(exist = false)

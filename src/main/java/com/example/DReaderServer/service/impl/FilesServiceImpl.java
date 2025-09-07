@@ -49,7 +49,6 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
     @Override
     public List<Files> createFiles(List<Files> files) {
         boolean isTrue = this.saveBatch(files);
-        System.out.println(files);
         if (!isTrue) throw new BizException("4000", "创建文件数据失败");
         return files;
     }
