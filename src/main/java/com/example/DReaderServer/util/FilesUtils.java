@@ -7,6 +7,9 @@ import com.example.DReaderServer.entity.MetaData;
 import com.example.DReaderServer.service.impl.FilesServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
+import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -20,6 +23,7 @@ import java.security.MessageDigest;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class FilesUtils {
     @Value("${file.meta}")
@@ -30,37 +34,32 @@ public class FilesUtils {
     private static final Tika tika = new Tika();
 
     public Map<String, Files> createFile(List<File> fileList, Integer type) {
-        Map<String, Files> map = new HashMap<>();
-        List<Files> list = new ArrayList<>();
-        for (File file : fileList) {
-            if (!file.exists()) {
-                file.mkdirs();
-            } else {
-                LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-                lambdaQueryWrapper.eq(Files::getFileName, file.getName());
-                Files files = filesService.getOne(lambdaQueryWrapper);
-                files.setFile(file);
-                map.put(files.getFileName(), files);
+        try {
+            Map<String, Files> map = new HashMap<>();
+            List<Files> list = new ArrayList<>();
+            for (File file : fileList) {
+                if (!file.exists()) {
+                    file.mkdirs();
+                } else {
+                    LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+                    lambdaQueryWrapper.eq(Files::getFileName, file.getName());
+                    Files files = filesService.getOne(lambdaQueryWrapper);
+                    files.setFile(file);
+                    map.put(files.getFileName(), files);
+                }
+                String inode = FileKeyAdapter.getFileKey(file);
+                list.add(createFiles(file, type, -1, 0,inode));
             }
-            list.add(createFiles(file, type, -1, 0));
+            filesService.saveBatch(list);
+            map.putAll(list.stream().collect(Collectors.toMap(Files::getFileName, files -> files)));
+            return map;
+        } catch (Exception e) {
+            throw new BizException("4000","文件创建失败：" + e.getMessage());
         }
-        filesService.saveBatch(list);
-        map.putAll(list.stream().collect(Collectors.toMap(Files::getFileName, files -> files)));
-        return map;
     }
 
-    public Map<String, Files> saveDataBase(List<File> fileList, Integer type) {
-        Map<String, Files> map = new HashMap<>();
-        List<Files> list = new ArrayList<>();
-        for (File file : fileList) {
-            list.add(createFiles(file, type, -1, 0));
-        }
-        filesService.saveBatch(list);
-        map.putAll(list.stream().collect(Collectors.toMap(Files::getFileName, files -> files)));
-        return map;
-    }
 
-    public Files createFiles(File file, Integer type, Integer parentId, Integer sort) {
+    public Files createFiles(File file, Integer type, Integer parentId, Integer sort,String inode) {
         Files files = new Files();
         try {
             files.setFileName(file.getName());
@@ -73,6 +72,7 @@ public class FilesUtils {
             files.setModifiableName(file.getName());
             files.setParentId(parentId);
             files.setSort(sort);
+            files.setInode(inode);
         } catch (IOException e) {
             e.printStackTrace();
             throw new BizException("获取文件类型失败");
@@ -88,6 +88,7 @@ public class FilesUtils {
         files.setFile(file);
         files.setIsFolder(1);
         files.setType(type);
+        files.setInode("folder");
         files.setFileSize(size.longValue());
         files.setModifiableName(file.getName());
         if (parentId != -1) files.setParentId(parentId);

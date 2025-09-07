@@ -4,7 +4,10 @@ import com.example.DReaderServer.common.BizException;
 import com.example.DReaderServer.common.TaskInterruptedException;
 import com.example.DReaderServer.entity.Files;
 import com.example.DReaderServer.entity.MetaData;
+import com.example.DReaderServer.enums.FilesCheckType;
+import com.example.DReaderServer.enums.FilesMatchType;
 import com.example.DReaderServer.service.FilesService;
+import com.example.DReaderServer.util.FileKeyAdapter;
 import com.example.DReaderServer.util.FilesUtils;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -13,14 +16,13 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -51,8 +53,9 @@ public abstract class AsyncTask {
     List<CheckFileTask> list = new ArrayList<>();
     List<String> skipFolder = new ArrayList<>(List.of("#recycle", "@eaDir", "@Recycle", "metaData.json"));
     Map<String, List<Files>> createFilesMap = new HashMap<>();
-    Map<String, Integer> dbHasHashMap = new HashMap<>();//数据库中已有的文件hash值集合
     Map<String, Integer> dbHasPathMap = new HashMap<>();//数据库中已有的文件路径值集合
+    static Map<Integer, List<Files>> parentChildrenMap = new HashMap<>();
+    List<Files> temporaryList = new ArrayList<>();
 
 
     Map<String, Integer> folders = new HashMap<>();//文件夹的FilesID;
@@ -98,6 +101,7 @@ public abstract class AsyncTask {
         list.clear();
         createFilesMap.clear();
         createFiles.clear();
+        parentChildrenMap.clear();
         //判断传入的文件夹路径是否为空
         if (path.equals("") || path.isEmpty()) {
             resourcesPath = basePath;
@@ -112,7 +116,7 @@ public abstract class AsyncTask {
         setMapData();
         checkInterrupted();
         filesUtils.checkMetaFile(resourcesFile);
-        createFiles = deepFolder(resourcesFile.listFiles(), 1, resourcesFile.getPath(), -1);
+        createFiles = deepFolder(resourcesFile.listFiles(), 1, resourcesFile.getPath(), -1, resourcesFile.getPath());
         finish();
         checkInterrupted();
         log.info("扫描完成");
@@ -121,71 +125,80 @@ public abstract class AsyncTask {
     protected void setMapData() {
         int index = 0;
         for (Files files : filesList) {
-            if (files.getHash() != null) dbHasHashMap.put(files.getHash(), index);
-            if (files.getFilePath() != null) dbHasPathMap.put(files.getFilePath(), index);
+            if (files.getIsFolder() == 2) {
+                parentChildrenMap.computeIfAbsent(files.getParentId(), k -> new ArrayList<>()).add(files);
+            } else if (files.getFilePath() != null) {
+                dbHasPathMap.put(files.getFilePath(), index);
+            }
             index++;
         }
     }
 
-    protected List<Files> deepFolder(File[] files, Integer type, String parentPath, Integer currentFolderID) {
+    protected List<Files> deepFolder(File[] files, Integer type, String parentPath, Integer currentFolderID, String mateDtaPath) {
         List<Files> filesList = new ArrayList<>();
-        int index = 0;
-        for (File file : files) {
-            if (!skipFolder.isEmpty() && skipFolder.contains(file.getName())) continue;
-            //判断文件是否为文件夹
-            if (file.isDirectory()) {
-                //判断文件夹中没有metadata 如果没有则为新创建的文件夹
-                //(所有没有的metadata文件的文件夹都会当作是新的文件夹，包括人为删除的)
-                if (!filesUtils.checkMetaFile(file)) {
-                    Files files1 = filesUtils.createFolder(file, currentFolderID, contentType, file.list().length);
-                    files1.setChild(deepFolder(file.listFiles(), type, parentPath + File.separator + file.getName(), currentFolderID));
-                    filesList.add(files1);
-                    continue;
+        try {
+            int index = 0;
+            for (File file : files) {
+                if (!skipFolder.isEmpty() && skipFolder.contains(file.getName())) continue;
+                //判断文件是否为文件夹
+                int deepType = type;
+                if (file.isDirectory()) {
+                    //判断文件夹中没有metadata 如果没有则为新创建的文件夹
+                    //(所有没有的metadata文件的文件夹都会当作是新的文件夹，包括人为删除的)
+                    if (!filesUtils.checkMetaFile(file)) {
+                        Files files1 = filesUtils.createFolder(file, currentFolderID, contentType, file.list().length);
+                        files1.setChild(deepFolder(file.listFiles(), deepType, parentPath + File.separator + file.getName(), -1, mateDtaPath + File.separator + file.getName()));
+                        filesList.add(files1);
+                        continue;
+                    }
+
+                    //获取文件夹中的metadata
+                    MetaData metaData = filesUtils.checkFolderName(file);
+                    String metaDataName = metaData.getName();
+                    String mateDataPath = mateDtaPath + File.separator + metaDataName;
+                    //如果metadata中的文件夹名字和拿到的文件夹名字不同则为重命名文件夹
+                    //重命名的条件
+                    //1.metadata里的数据和文件夹名称不相等
+                    //2.数据库中存在metadata里的数据名称的值
+                    String renamePath = parentPath;
+                    String name = file.getName();
+                    Integer pID = currentFolderID;
+                    if (!metaDataName.equals(name) && checkDbData(file.getParent() + File.separator + metaDataName)) {
+                        Files filesData = checkMap.get(file.getParent() + File.separator + metaDataName); //拿到checkList的最新一条数据
+                        pID = filesData.getId();
+
+                        //更新Files实体类
+                        filesData.setFileName(file.getName());
+                        filesData.setModifiableName(file.getName());
+                        filesData.setFilePath(file.getPath()); //判断修改文件信息
+                        renameFiles.add(filesData);
+                        //更新Files实体类
+                        renamePath = renamePath + File.separator + metaDataName;
+                        deepType = 2;//设置type为重命名
+                    } else if (!checkDbData(file.getPath())) {
+                        if(!metaDataName.equals(name))filesUtils.editMetaData(file);
+                        //这里对（有metadata文件并且没有重命名，但数据库中找不到文件信息）的操作
+                        Files files1 = filesUtils.createFolder(file, currentFolderID, contentType, file.list().length - 1);
+                        files1.setChild(deepFolder(file.listFiles(), deepType, parentPath + File.separator + file.getName(), -1, mateDataPath));
+                        filesList.add(files1);
+                        continue;
+                    } else {
+                        //这里是对没有重命名且文件信息再数据库中存在的信息的操作
+                        checkDbData(file.getPath());
+                        Files filesData = checkMap.get(file.getPath()); //拿到checkMap的最新一条数据
+                        pID = filesData.getId();
+                        renamePath = renamePath + File.separator + file.getName();
+                    }
+                     filesList.addAll(deepFolder(file.listFiles(), deepType, renamePath, pID, mateDataPath));
+                } else if (file.isFile() && !filesUtils.isMetaFile(file)) {
+                    boolean isTop = parentPath.equals(resourcesFile.getPath());
+                    list.add(new CheckFileTask(file, currentFolderID, type, filesUtils, mateDtaPath, index,isTop));
+                    index++;
                 }
-
-                //获取文件夹中的metadata
-                MetaData metaData = filesUtils.checkFolderName(file);
-                String metaDataName = metaData.getName();
-
-                //如果metadata中的文件夹名字和拿到的文件夹名字不同则为重命名文件夹
-                //重命名的条件
-                //1.metadata里的数据和文件夹名称不相等
-                //2.数据库中存在metadata里的数据名称的值
-                String renamePath = parentPath;
-                String name = file.getName();
-                Integer pID = currentFolderID;
-                if (!metaDataName.equals(name) &&  checkDbData(file.getParent() + File.separator + metaDataName)) {
-                    Files filesData = checkMap.get(file.getParent() + File.separator + metaDataName); //拿到checkList的最新一条数据
-                    pID = filesData.getId();
-
-                    //更新Files实体类
-                    filesData.setFileName(file.getName());
-                    filesData.setModifiableName(file.getName());
-                    filesData.setFilePath(file.getPath()); //判断修改文件信息
-                    renameFiles.add(filesData);
-                    //更新Files实体类
-                    renamePath = renamePath + File.separator + metaDataName;
-                    type = 2;//设置type为重命名
-                } else if (metaDataName.equals(file.getName()) && !checkDbData(file.getPath())) {
-                    //这里对（有metadata文件并且没有重命名，但数据库中找不到文件信息）的操作
-                    System.out.println("currentFolderID" + currentFolderID);
-                    Files files1 = filesUtils.createFolder(file, currentFolderID, contentType, file.list().length - 1);
-                    files1.setChild(deepFolder(file.listFiles(), type, parentPath + File.separator + file.getName(), currentFolderID));
-                    filesList.add(files1);
-                    continue;
-                } else {
-                    //这里是对没有重命名且文件信息再数据库中存在的信息的操作
-                    checkDbData(file.getPath());
-                    Files filesData = checkMap.get(file.getPath()); //拿到checkMap的最新一条数据
-                    pID = filesData.getId();
-                    renamePath = renamePath + File.separator + file.getName();
-                }
-                deepFolder(file.listFiles(), type, renamePath, pID);
-            } else if (file.isFile() && !filesUtils.isMetaFile(file)) {
-                Files fliesData = checkDbFile(file,currentFolderID);
-                list.add(new CheckFileTask(file, parentPath, currentFolderID, type, filesUtils, contentType, index, fliesData));
-                index++;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new BizException("扫描文件夹异常");
         }
         checkInterrupted();
         return filesList;
@@ -198,38 +211,107 @@ public abstract class AsyncTask {
             futures.add(executor.submit(checkFileTask));
         }
         executor.shutdown();
+
         try {
             boolean tasksCompleted = executor.awaitTermination(30, TimeUnit.SECONDS);
             while (!tasksCompleted) {
                 tasksCompleted = executor.awaitTermination(30, TimeUnit.SECONDS);
             }
-
+            String parentPath = "";
             for (Future<FileTaskResult> future : futures) {
                 checkInterrupted();
                 FileTaskResult fileTaskResult = future.get();
-                String parentPath = fileTaskResult.getParentPath();
                 Files files = fileTaskResult.getFiles();
-                if (fileTaskResult.getType() == 3) continue;
-
-                if (fileTaskResult.getType() == 2) {
-                    renameFiles.add(fileTaskResult.getFiles());
-                    continue;
+                FilesCheckType checkType = fileTaskResult.getType();
+                switch (checkType) {
+                    case CREATE -> {
+                        parentPath  = new File(files.getFilePath()).getParent();
+                        createFilesMap.computeIfAbsent(parentPath, k -> new ArrayList<>()).add(files);
+                    }
+                    case RENAME -> {
+                        renameFiles.add(files);
+                        checkMap.put(files.getFilePath(), files);
+                    }
+                    case SPACIAL -> temporaryList.add(files);
+                    case NORMAL -> checkMap.put(files.getFilePath(), files);
                 }
-
-
-                List<Files> list = new ArrayList<>();
-                if (createFilesMap.containsKey(parentPath)) list = createFilesMap.get(parentPath);
-                list.add(files);
-                createFilesMap.put(parentPath, list);
             }
+
+            Map<Integer, Map<String, List<Files>>> tempGrouped =
+                    temporaryList.stream()
+                            .collect(Collectors.groupingBy(
+                                    Files::getParentId,
+                                    Collectors.groupingBy(Files::getHash)
+                            ));
+
+            tempGrouped.forEach((parentId, hashMap) -> {
+                List<Files> dbFiles = parentChildrenMap.getOrDefault(parentId, List.of());
+                dbFiles.removeAll(checkMap.values());
+
+                Map<String, List<Files>> dbFilesByHash =
+                        dbFiles.stream().collect(Collectors.groupingBy(Files::getHash));
+
+                hashMap.forEach((hash, tempFiles) -> {
+                    List<Files> matchedDbFiles = dbFilesByHash.get(hash);
+
+                    if (matchedDbFiles != null && matchedDbFiles.size() == 1 && tempFiles.size() == 1) {
+                        Files dbFile = matchedDbFiles.get(0);
+                        dbFile.setModifiableName(dbFile.getFileName());
+
+                        renameFiles.add(dbFile);
+                        checkMap.put(dbFile.getFilePath(), dbFile);
+                    } else {
+                        addToCreateFilesMap(tempFiles);
+                    }
+                });
+            });
+
+
+//            parentChildrenMap.forEach((key, item) -> {
+//                item.removeAll(checkMap.values());
+//                Map<String, List<Files>> unmatchedDbFilesByHash = item.stream().collect(Collectors.groupingBy(Files::getHash));
+//                Map<String, List<Files>> temporaryMapByParentID = temporaryList.stream().filter(files -> files.getParentId().equals(key)).collect(Collectors.groupingBy(Files::getHash));
+//                temporaryMapByParentID.forEach((k, v) -> {
+//                    if (unmatchedDbFilesByHash.containsKey(k)) {
+//                        if (unmatchedDbFilesByHash.get(k).size() == 1 && v.size() == 1) {
+//                            Files files = unmatchedDbFilesByHash.get(k).get(0);
+//                            files.setInode(files.getInode());
+//                            files.setFileName(files.getFileName());
+//                            files.setFilePath(files.getFilePath());
+//                            files.setModifiableName(files.getFileName());
+//                            renameFiles.add(files);
+//                            checkMap.put(files.getFilePath(), files);
+//                        } else {
+//                            String path = "";
+//                            for (Files files : v) {
+//                                List<Files> list = new ArrayList<>();
+//                                path = files.getFilePath().replaceAll(File.separator + files.getFileName(), "");
+//                                if (createFilesMap.containsKey(path)) list = createFilesMap.get(path);
+//                                list.add(files);
+//                                createFilesMap.put(path, list);
+//                            }
+//                        }
+//                    } else {
+//                        String path = "";
+//                        for (Files files : v) {
+//                            List<Files> list = new ArrayList<>();
+//                            path = files.getFilePath().replaceAll(File.separator + files.getFileName(), "");
+//                            if (createFilesMap.containsKey(path)) list = createFilesMap.get(path);
+//                            list.add(files);
+//                            createFilesMap.put(path, list);
+//                        }
+//                    }
+//                });
+//            });
+
             //递归将文件（子Files）放到对应的文件夹（父Files）下
             createFileDeep(createFiles);
             createFilesMap.values().forEach(item -> createFiles.addAll(item));
             // 所有任务完成后继续执行后续操作
-            rename(); // 重命名文件操作
             if (!createFiles.isEmpty()) {
                 create(); // 创建新的文件
             }
+            rename(); // 重命名文件操作
             checkInterrupted();
             remove();
         } catch (InterruptedException e) {
@@ -246,6 +328,13 @@ public abstract class AsyncTask {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
             throw new BizException("4000", "文件扫描失败");
+        }
+    }
+
+    private void addToCreateFilesMap(List<Files> filesList) {
+        for (Files files : filesList) {
+            String path = new File(files.getFilePath()).getParent();
+            createFilesMap.computeIfAbsent(path, k -> new ArrayList<>()).add(files);
         }
     }
 
@@ -270,21 +359,6 @@ public abstract class AsyncTask {
             return true;
         }
         return false;
-    }
-
-    protected Files checkDbFile(File file,Integer parentID) {
-        System.out.println(parentID);
-        String hash = filesUtils.getFileChecksum(file);
-        if (dbHasHashMap.containsKey(hash)) {
-            int index = dbHasHashMap.get(hash);
-            Files files = filesList.get(index);
-            if(!files.getParentId().equals(parentID)) {
-                return null;
-            }
-            checkMap.put(files.getFilePath(), files);
-            return files;
-        }
-        return null;
     }
 
     public void rename() {
@@ -331,49 +405,139 @@ public abstract class AsyncTask {
 @AllArgsConstructor
 class CheckFileTask implements Callable<FileTaskResult> {
     private File file;
-    private String parentPath;
-    private Integer currentFolderID;
+    private Integer parentID;
     private Integer type;
     private FilesUtils filesUtils;
-    private Integer contentType;
+    private String mateData;
     private int order;
-    private Files fliesData;
+    private boolean isTop;
+//    private String parentPath;
 
     @Override
     public FileTaskResult call() throws Exception {
+        //CREATE为新增 RENAME为重命名 NORMAL为正常（数据库中已经有数据不需要新增或重命名） SPACIAL暂时无法判断类型
+        FilesCheckType filesType = FilesCheckType.NORMAL;
+        Files files = null;
         if (Thread.currentThread().isInterrupted()) throw new TaskInterruptedException();
-        short filesType = 3;
-        //判断这个文件是否数据库中
-        String renamePath = type == 2 ? parentPath + File.separator + file.getName() : file.getPath();
-        if (fliesData != null) {
-            String fileHash = filesUtils.getFileChecksum(file);
-            //判断文件hash是否相同 不相同则为新文件
-            if (!fliesData.getHash().equals(fileHash)) {
-                filesType = 1;
-                fliesData = filesUtils.createFiles(file, contentType, currentFolderID, order);
+        String inode = FileKeyAdapter.getFileKey(file);
+        String filePath = file.getPath();
+        if (type == 1 && parentID == -1) {
+            if (!isTop) {
+                filesType = FilesCheckType.CREATE;
+                files = filesUtils.createFiles(file, type, parentID, order, inode);
+                return new FileTaskResult(filesType, files);
+            }
+        } else if (type == 2) {
+            filesType = FilesCheckType.RENAME;
+            filePath = mateData + File.separator + file.getName();
+        }
+
+        List<Files> list = AsyncTask.parentChildrenMap.get(parentID);
+       if(list == null) {
+           filesType = FilesCheckType.CREATE;
+           files = filesUtils.createFiles(file, type, parentID, order, inode);
+           return new FileTaskResult(filesType, files);
+       }
+        List<Files> filesList = list.stream().filter(item -> item.getInode().equals(inode)).collect(Collectors.toList());
+        String fileHash = filesUtils.getFileChecksum(file);
+        if (filesList.isEmpty()) {
+            FilesMatchResult result = findSimilar(list, fileHash, filePath);
+            files = result.getMatchedFile();
+            filesType = FilesCheckType.RENAME;
+            if ((result.type == FilesMatchType.EXACT) || (result.type == FilesMatchType.HASH && result.hashNum == 1)) {
+                files.setInode(inode);
+                files.setFileName(file.getName());
+                files.setFilePath(file.getPath());
+                files.setModifiableName(file.getName());
+            } else if (result.type == FilesMatchType.HASH && result.hashNum > 1) {
+                filesType = FilesCheckType.SPACIAL;
+                files = filesUtils.createFiles(file, type, parentID, order, inode);
             } else {
-                fliesData.setFileName(file.getName());
-                fliesData.setFilePath(file.getPath()); //判断修改文件信息
-                filesType = 2;
+                filesType = FilesCheckType.CREATE;
+                files = filesUtils.createFiles(file, type, parentID, order, inode);
+                return new FileTaskResult(filesType, files);
             }
         } else {
-            //不在 则为新的文件
-            filesType = 1;
-            fliesData = filesUtils.createFiles(file, contentType, currentFolderID, order);
+            files = filesList.get(0);
+            if (!files.getHash().equals(fileHash)) {
+                filesType = FilesCheckType.CREATE;
+                files = filesUtils.createFiles(file, type, parentID, order, inode);
+                return new FileTaskResult(filesType, files);
+            }
+
+            if (!files.getFilePath().equals(filePath)) {
+                filesType = FilesCheckType.RENAME;
+                files.setFileName(file.getName());
+                files.setFilePath(file.getPath());
+                files.setModifiableName(file.getName());
+            }
         }
-        return new FileTaskResult(filesType, fliesData, parentPath);
+
+        if(type == 2) {
+            filesType = FilesCheckType.RENAME;
+            files.setFilePath(file.getPath());
+        }
+        return new FileTaskResult(filesType, files);
+    }
+
+    public static class FilesMatchResult {
+        private FilesMatchType type;
+        private Files matchedFile;
+        private Integer hashNum;
+
+        public FilesMatchResult(FilesMatchType exact, Files files, Integer hashNum) {
+            this.type = exact;
+            this.matchedFile = files;
+            this.hashNum = hashNum;
+        }
+
+        public FilesMatchType getType() {
+            return type;
+        }
+
+        public Files getMatchedFile() {
+            return matchedFile;
+        }
+    }
+
+    public FilesMatchResult findSimilar(List<Files> filesList, String hash, String filePath) {
+        Files sameHash = null;
+        Files samePath = null;
+        Integer hashNum = 0;
+
+        for (Files f : filesList) {
+            boolean sameHashFlag = Objects.equals(f.getHash(), hash);
+            boolean samePathFlag = Objects.equals(f.getFilePath(), filePath);
+
+            if (sameHashFlag && samePathFlag) {
+                return new FilesMatchResult(FilesMatchType.EXACT, f, hashNum);
+            }
+
+            if (samePathFlag && samePath == null) {
+                samePath = f;
+            }
+
+            if (sameHashFlag) {
+                hashNum++;
+                if (sameHash == null) {
+                    sameHash = f;
+                }
+            }
+        }
+
+        if (samePath != null) return new FilesMatchResult(FilesMatchType.PATH, samePath, hashNum);
+        if (sameHash != null) return new FilesMatchResult(FilesMatchType.HASH, sameHash, hashNum);
+        return new FilesMatchResult(FilesMatchType.NONE, null, hashNum);
     }
 }
 
 @Data
 class FileTaskResult {
-    short type;
+    FilesCheckType type;
     Files files;
-    String parentPath;
 
-    FileTaskResult(short type, Files files, String parentPath) {
+    FileTaskResult(FilesCheckType type, Files files) {
         this.type = type;
         this.files = files;
-        this.parentPath = parentPath;
     }
 }
