@@ -34,7 +34,6 @@ public class SeriesController {
                 seriesListQueryCondition.setSortOrder("DESC");
             }
         }
-        System.out.println(seriesListQueryCondition.getSortField());
         return ResultResponse.success(seriesService.getList(seriesListQueryCondition));
     }
 

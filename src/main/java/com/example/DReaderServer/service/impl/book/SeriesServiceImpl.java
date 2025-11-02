@@ -50,7 +50,6 @@ public class SeriesServiceImpl extends ServiceImpl<SeriesMapper, Series> impleme
     public PageVO<SeriesListDTO> getList(SeriesListQueryCondition seriesListQueryCondition) {
         List<SeriesListDTO> list = seriesMapper.getList(seriesListQueryCondition);
         list.stream().forEach(item -> item.setMinioCover(uploadService.getObject(item.getCover())));
-        System.out.println(list);
         Integer count = seriesMapper.count(seriesListQueryCondition);
         return new PageVO(seriesListQueryCondition.getLimit(), seriesListQueryCondition.getPage(), count, list);
     }
