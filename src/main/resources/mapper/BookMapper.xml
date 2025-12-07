@@ -40,7 +40,7 @@
         book.files_id,
         files.file_path,
         files.is_folder,
-        `modifiable_name` as `name`,
+        files_details.`name`,
         author,
         `profile`,
         progress,
@@ -64,7 +64,7 @@
         <if test="folder != null and folder != ''">
             and files.is_folder = #{folder}
         </if>
-        ORDER BY `modifiable_name`
+        ORDER BY files_details.`name`,
         LIMIT #{offset},#{limit}
     </select>
     <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.book.BookListQueryCondition">
@@ -97,7 +97,7 @@
     <select id="getCoverList" resultMap="bookCover" parameterType="java.lang.Integer">
         SELECT
         book.id,
-        `modifiable_name` as `name`,
+        files_details.`name`,
         book.cover
         FROM
         book
@@ -111,7 +111,7 @@
         book.files_id,
         files.file_path,
         files.is_folder,
-        `modifiable_name` as `name`,
+        files_details.`name`,
         author,
         `profile`,
         progress,
@@ -136,7 +136,7 @@
         book.id,
         book.cover,
         files.`hash`,
-        files.modifiable_name as name,
+        files_details.`name`,
         parent.file_name
         FROM
         book

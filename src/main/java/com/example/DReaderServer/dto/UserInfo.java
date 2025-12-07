@@ -8,8 +8,7 @@ public class UserInfo {
     private String email;
     private int mystery;
     private String cover;
-    private String minioCover;
-
+    private String fileAdapter;
     private String oldPassWord;
     private String newPassWord;
 }

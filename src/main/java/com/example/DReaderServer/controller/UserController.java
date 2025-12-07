@@ -1,7 +1,6 @@
 package com.example.DReaderServer.controller;
 
 import com.example.DReaderServer.common.ResultResponse;
-import com.example.DReaderServer.common.UploadFile;
 import com.example.DReaderServer.dto.UserInfo;
 import com.example.DReaderServer.entity.User;
 import com.example.DReaderServer.service.UserService;
@@ -23,9 +22,6 @@ import java.util.Map;
 public class UserController {
     @Resource
     UserService userService;
-
-    @Resource
-    UploadFile uploadFile;
 
     @Resource
     private PasswordEncoder passwordEncoder;

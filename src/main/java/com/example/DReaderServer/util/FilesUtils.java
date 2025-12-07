@@ -2,13 +2,11 @@ package com.example.DReaderServer.util;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.DReaderServer.common.BizException;
-import com.example.DReaderServer.entity.Files;
+import com.example.DReaderServer.entity.files.Files;
 import com.example.DReaderServer.entity.MetaData;
-import com.example.DReaderServer.service.impl.FilesServiceImpl;
+import com.example.DReaderServer.service.impl.files.FilesServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import lombok.extern.java.Log;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,7 +67,7 @@ public class FilesUtils {
             files.setFile(file);
             files.setFileSize(file.length());
             files.setHash(this.getFileChecksum(file));
-            files.setModifiableName(file.getName());
+//            files.setModifiableName(file.getName());
             files.setParentId(parentId);
             files.setSort(sort);
             files.setInode(inode);
@@ -90,7 +88,7 @@ public class FilesUtils {
         files.setType(type);
         files.setInode("folder");
         files.setFileSize(size.longValue());
-        files.setModifiableName(file.getName());
+//        files.setModifiableName(file.getName());
         if (parentId != -1) files.setParentId(parentId);
         return files;
     }

@@ -1,4 +1,4 @@
-package com.example.DReaderServer.service.impl;
+package com.example.DReaderServer.service.impl.files;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -7,9 +7,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.DReaderServer.common.BizException;
 import com.example.DReaderServer.dto.setting.ProportionDTO;
 import com.example.DReaderServer.dto.setting.TimeCountDTO;
-import com.example.DReaderServer.entity.Files;
-import com.example.DReaderServer.mapper.FilesMapper;
-import com.example.DReaderServer.service.FilesService;
+import com.example.DReaderServer.entity.files.Files;
+import com.example.DReaderServer.entity.files.FilesAuthor;
+import com.example.DReaderServer.mapper.files.FilesAuthorMapper;
+import com.example.DReaderServer.mapper.files.FilesDetailsMapper;
+import com.example.DReaderServer.mapper.files.FilesMapper;
+import com.example.DReaderServer.mapper.files.FilesTagsMapper;
+import com.example.DReaderServer.service.files.FilesAuthorService;
+import com.example.DReaderServer.service.files.FilesDetailsService;
+import com.example.DReaderServer.service.files.FilesService;
+import com.example.DReaderServer.service.files.FilesTagsService;
 import com.example.DReaderServer.util.ValidationUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +40,15 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
     @Resource
     FilesMapper filesMapper;
 
+    @Resource
+    FilesAuthorService filesAuthorService;
+
+    @Resource
+    FilesDetailsService filesDetailsService;
+
+    @Resource
+    FilesTagsService filesTagsService;
+
     @Override
     public List<Files> getByType(Integer type) {
         LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -55,6 +71,10 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
 
     @Override
     public void removerFiles(List<Files> files) {
+        List<Integer> filesIds = files.stream().map(item -> item.getId()).collect(Collectors.toList());
+        filesAuthorService.removeByFilesIds(filesIds);
+        filesDetailsService.removeByFilesIds(filesIds);
+        filesTagsService.removeByFilesIds(filesIds);
         this.removeBatchByIds(files);
     }
 

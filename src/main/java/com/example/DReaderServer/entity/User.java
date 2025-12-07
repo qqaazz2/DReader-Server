@@ -20,6 +20,7 @@ public class User implements Serializable {
     private Integer mystery;
     private String mysteryPassword;
     private String cover;
+    private String fileAdapter;
 
 
     //验证码

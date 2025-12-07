@@ -1,7 +1,7 @@
 package com.example.DReaderServer.controller;
 
 import com.example.DReaderServer.common.ResultResponse;
-import com.example.DReaderServer.service.FilesService;
+import com.example.DReaderServer.service.files.FilesService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 

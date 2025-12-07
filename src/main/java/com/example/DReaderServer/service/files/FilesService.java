@@ -1,8 +1,8 @@
-package com.example.DReaderServer.service;
+package com.example.DReaderServer.service.files;
 
 import com.example.DReaderServer.dto.setting.ProportionDTO;
 import com.example.DReaderServer.dto.setting.TimeCountDTO;
-import com.example.DReaderServer.entity.Files;
+import com.example.DReaderServer.entity.files.Files;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -17,6 +17,7 @@ public class SeriesListQueryCondition extends QueryCondition {
     private String sortOrder;
 
     private Integer overStatus;
+    private boolean flattening = true;
 
     public SeriesListQueryCondition(Integer page) {
         super(page);

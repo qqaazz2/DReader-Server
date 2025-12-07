@@ -15,27 +15,9 @@ public class Book {
 
     Integer filesId;
 
-    String cover;
-
-    String author;
-
-    String profile;
-
-    Integer status;
-
     Double progress;
 
     Integer deleted;
 
-    String publishing;
-
     Integer readTagNum;
-
-    String readTime;
-
-    @TableField(exist = false)
-    String hash;
-
-    @TableField(exist = false)
-    Integer parentId;
 }

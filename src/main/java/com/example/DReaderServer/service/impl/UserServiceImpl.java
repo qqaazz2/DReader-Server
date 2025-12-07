@@ -12,8 +12,8 @@ import com.example.DReaderServer.entity.User;
 import com.example.DReaderServer.enums.ExceptionEnum;
 import com.example.DReaderServer.mapper.UserMapper;
 import com.example.DReaderServer.service.TokenService;
-import com.example.DReaderServer.service.UploadService;
 import com.example.DReaderServer.service.UserService;
+import com.example.DReaderServer.storage.FileAdapterFactory;
 import com.example.DReaderServer.util.FileTypeUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import com.wf.captcha.SpecCaptcha;
@@ -51,7 +51,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     PasswordEncoder passwordEncoder;
 
     @Resource
-    UploadService uploadService;
+    FileAdapterFactory fileAdapterFactory;
 
     private static final String codeKey = "CodeKey:";
 
@@ -67,11 +67,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         userInfo.setName(loginUser.getUser().getName());
         userInfo.setMystery(loginUser.getUser().getMystery());
         userInfo.setCover(loginUser.getUser().getCover());
-        try {
-            userInfo.setMinioCover(uploadService.getObject(loginUser.getUser().getCover()));
-        }catch (Exception e){
-            log.error("用户图片获取失败");
-        }
+        userInfo.setFileAdapter(loginUser.getUser().getFileAdapter());
         Map<String, Object> map = new HashMap<>();
         map.put("token", token);
         map.put("userInfo", userInfo);
@@ -116,12 +112,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             userInfo.setName(loginUser.getUser().getName());
             userInfo.setMystery(loginUser.getUser().getMystery());
             userInfo.setCover(loginUser.getUser().getCover());
-            try {
-                userInfo.setMinioCover(uploadService.getObject(loginUser.getUser().getCover()));
-            }catch (Exception e){
-                log.error("用户图片获取失败");
-            }
-                return userInfo;
+            userInfo.setFileAdapter(loginUser.getUser().getFileAdapter());
+            return userInfo;
         }
         throw new BizException(ExceptionEnum.SIGNATURE_NOT_MATCH);
     }
@@ -227,24 +219,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public String updateImage(MultipartFile multipartFile) {
-        FileTypeUtils.validateFile(multipartFile,new String[]{"jpg"},10240);
+        FileTypeUtils.validateFile(multipartFile, new String[]{"jpg"}, 10240);
         String cover = "/user/cover.jpg";
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
-            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-            updateWrapper.eq(User::getId, loginUser.getUser().getId());
-            updateWrapper.set(User::getCover, cover);
-            boolean update = this.update(updateWrapper);
-            if (!update) throw new BizException("4000", "修改头像失败");
-
+            String path;
             try {
-                uploadService.upload(multipartFile.getBytes(),cover,"image/jpeg");
+                path = fileAdapterFactory.getFileAdapter().upload(multipartFile.getBytes(), cover, "image/jpeg");
             } catch (IOException e) {
                 throw new BizException("4000", "修改头像失败");
             }
+            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+            updateWrapper.eq(User::getId, loginUser.getUser().getId());
+            updateWrapper.set(User::getCover, path);
+            boolean update = this.update(updateWrapper);
+            if (!update) throw new BizException("4000", "修改头像失败");
 
-            return uploadService.getObject(cover);
+            loginUser.getUser().setCover(path);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            return path;
+        } else {
+            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public void changeFileAdapter(String adapter) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
+            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+            User user = loginUser.getUser();
+            String oldAdapter = user.getFileAdapter();
+            LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+            lambdaUpdateWrapper.eq(User::getId, user.getId());
+            lambdaUpdateWrapper.set(User::getFileAdapter, adapter);
+            if (!this.update(lambdaUpdateWrapper))    throw new BizException("4000", "修改文件适配器失败");
+            user.setFileAdapter(adapter);
+            loginUser.setUser(user);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
         }

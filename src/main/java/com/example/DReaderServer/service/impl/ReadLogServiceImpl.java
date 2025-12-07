@@ -59,20 +59,20 @@ public class ReadLogServiceImpl extends ServiceImpl<ReadLogMapper, ReadLog> impl
     }
 
     @Override
-    public ReadLog startReadLog(Integer bookId) {
+    public ReadLog startReadLog(Integer filesId) {
         LocalDate date = LocalDate.now();
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
         LambdaQueryWrapper<ReadLog> lambdaQueryWrapper = new LambdaQueryWrapper();
-        lambdaQueryWrapper.eq(ReadLog::getBookId, bookId);
+        lambdaQueryWrapper.eq(ReadLog::getFilesId, filesId);
         lambdaQueryWrapper.between(ReadLog::getTime, startOfDay, endOfDay);
         ReadLog readLog = this.getOne(lambdaQueryWrapper);
 
         if (readLog == null) {
             readLog = new ReadLog();
-            readLog.setBookId(bookId);
+            readLog.setFilesId(filesId);
             readLog.setTime(LocalDateTime.now());
-
+            readLog.setSeconds(0);
             if (!this.save(readLog)) throw new BizException("4000", "创建阅读记录失败");
         } else {
             readLog.setTime(LocalDateTime.now());

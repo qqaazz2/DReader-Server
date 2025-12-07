@@ -1,4 +1,4 @@
-package com.example.DReaderServer.entity;
+package com.example.DReaderServer.entity.files;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -29,9 +29,7 @@ public class Files {
     private Integer isFolder = 2;
     private Integer type;
     private Integer parentId;
-    private String modifiableName;
     private String hash;
-    private String cover;
     private Integer sort;
     private String inode;
     @TableField(exist = false)

@@ -2,11 +2,13 @@ package com.example.DReaderServer.task;
 
 import com.example.DReaderServer.common.BizException;
 import com.example.DReaderServer.common.TaskInterruptedException;
-import com.example.DReaderServer.entity.Files;
+import com.example.DReaderServer.entity.files.Files;
 import com.example.DReaderServer.entity.MetaData;
+import com.example.DReaderServer.entity.files.FilesDetails;
 import com.example.DReaderServer.enums.FilesCheckType;
 import com.example.DReaderServer.enums.FilesMatchType;
-import com.example.DReaderServer.service.FilesService;
+import com.example.DReaderServer.service.files.FilesDetailsService;
+import com.example.DReaderServer.service.files.FilesService;
 import com.example.DReaderServer.util.FileKeyAdapter;
 import com.example.DReaderServer.util.FilesUtils;
 import jakarta.annotation.PreDestroy;
@@ -19,15 +21,11 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Transactional
 public abstract class AsyncTask {
     @Resource
     AsyncTaskExecutor taskExecutor;
@@ -40,6 +38,12 @@ public abstract class AsyncTask {
 
     @Resource
     FilesService filesService;
+
+    @Resource
+    ScrapeTask scrapeTask;
+
+    @Resource
+    FilesDetailsService filesDetailsService;
 
     String resourcesPath = "";
     String basePath;
@@ -69,6 +73,7 @@ public abstract class AsyncTask {
         String taskName = Thread.currentThread().getName() + "-" + taskClass.getSimpleName();
         log.info("[{}] 新任务已启动", taskName);
         Thread oldTask = taskMap.get(taskClass);
+        scrapeTask.stop();
         if (oldTask != null && oldTask.isAlive()) {
             log.info("发现旧任务[{}]正在运行，准备中止...", oldTask.getName() + "-" + taskClass.getSimpleName());
             oldTask.interrupt();
@@ -102,6 +107,7 @@ public abstract class AsyncTask {
         createFilesMap.clear();
         createFiles.clear();
         parentChildrenMap.clear();
+        dbHasPathMap.clear();
         //判断传入的文件夹路径是否为空
         if (path.equals("") || path.isEmpty()) {
             resourcesPath = basePath;
@@ -120,6 +126,7 @@ public abstract class AsyncTask {
         finish();
         checkInterrupted();
         log.info("扫描完成");
+        scrapeTask.startOrRestart();
     }
 
     protected void setMapData() {
@@ -169,14 +176,14 @@ public abstract class AsyncTask {
 
                         //更新Files实体类
                         filesData.setFileName(file.getName());
-                        filesData.setModifiableName(file.getName());
+//                        filesData.setModifiableName(file.getName());
                         filesData.setFilePath(file.getPath()); //判断修改文件信息
                         renameFiles.add(filesData);
                         //更新Files实体类
                         renamePath = renamePath + File.separator + metaDataName;
                         deepType = 2;//设置type为重命名
                     } else if (!checkDbData(file.getPath())) {
-                        if(!metaDataName.equals(name))filesUtils.editMetaData(file);
+                        if (!metaDataName.equals(name)) filesUtils.editMetaData(file);
                         //这里对（有metadata文件并且没有重命名，但数据库中找不到文件信息）的操作
                         Files files1 = filesUtils.createFolder(file, currentFolderID, contentType, file.list().length - 1);
                         files1.setChild(deepFolder(file.listFiles(), deepType, parentPath + File.separator + file.getName(), -1, mateDataPath));
@@ -189,10 +196,10 @@ public abstract class AsyncTask {
                         pID = filesData.getId();
                         renamePath = renamePath + File.separator + file.getName();
                     }
-                     filesList.addAll(deepFolder(file.listFiles(), deepType, renamePath, pID, mateDataPath));
+                    filesList.addAll(deepFolder(file.listFiles(), deepType, renamePath, pID, mateDataPath));
                 } else if (file.isFile() && !filesUtils.isMetaFile(file)) {
                     boolean isTop = parentPath.equals(resourcesFile.getPath());
-                    list.add(new CheckFileTask(file, currentFolderID, type, filesUtils, mateDtaPath, index,isTop));
+                    list.add(new CheckFileTask(file, currentFolderID, type, filesUtils, mateDtaPath, index, isTop));
                     index++;
                 }
             }
@@ -204,6 +211,8 @@ public abstract class AsyncTask {
         return filesList;
     }
 
+
+    @Transactional
     public void finish() {
         List<Future<FileTaskResult>> futures = new ArrayList<>();
         for (CheckFileTask checkFileTask : list) {
@@ -225,7 +234,7 @@ public abstract class AsyncTask {
                 FilesCheckType checkType = fileTaskResult.getType();
                 switch (checkType) {
                     case CREATE -> {
-                        parentPath  = new File(files.getFilePath()).getParent();
+                        parentPath = new File(files.getFilePath()).getParent();
                         createFilesMap.computeIfAbsent(parentPath, k -> new ArrayList<>()).add(files);
                     }
                     case RENAME -> {
@@ -256,7 +265,7 @@ public abstract class AsyncTask {
 
                     if (matchedDbFiles != null && matchedDbFiles.size() == 1 && tempFiles.size() == 1) {
                         Files dbFile = matchedDbFiles.get(0);
-                        dbFile.setModifiableName(dbFile.getFileName());
+//                        dbFile.setModifiableName(dbFile.getFileName());
 
                         renameFiles.add(dbFile);
                         checkMap.put(dbFile.getFilePath(), dbFile);
@@ -411,7 +420,6 @@ class CheckFileTask implements Callable<FileTaskResult> {
     private String mateData;
     private int order;
     private boolean isTop;
-//    private String parentPath;
 
     @Override
     public FileTaskResult call() throws Exception {
@@ -433,11 +441,11 @@ class CheckFileTask implements Callable<FileTaskResult> {
         }
 
         List<Files> list = AsyncTask.parentChildrenMap.get(parentID);
-       if(list == null) {
-           filesType = FilesCheckType.CREATE;
-           files = filesUtils.createFiles(file, type, parentID, order, inode);
-           return new FileTaskResult(filesType, files);
-       }
+        if (list == null) {
+            filesType = FilesCheckType.CREATE;
+            files = filesUtils.createFiles(file, type, parentID, order, inode);
+            return new FileTaskResult(filesType, files);
+        }
         List<Files> filesList = list.stream().filter(item -> item.getInode().equals(inode)).collect(Collectors.toList());
         String fileHash = filesUtils.getFileChecksum(file);
         if (filesList.isEmpty()) {
@@ -448,7 +456,7 @@ class CheckFileTask implements Callable<FileTaskResult> {
                 files.setInode(inode);
                 files.setFileName(file.getName());
                 files.setFilePath(file.getPath());
-                files.setModifiableName(file.getName());
+//                files.setModifiableName(file.getName());
             } else if (result.type == FilesMatchType.HASH && result.hashNum > 1) {
                 filesType = FilesCheckType.SPACIAL;
                 files = filesUtils.createFiles(file, type, parentID, order, inode);
@@ -469,11 +477,11 @@ class CheckFileTask implements Callable<FileTaskResult> {
                 filesType = FilesCheckType.RENAME;
                 files.setFileName(file.getName());
                 files.setFilePath(file.getPath());
-                files.setModifiableName(file.getName());
+//                files.setModifiableName(file.getName());
             }
         }
 
-        if(type == 2) {
+        if (type == 2) {
             filesType = FilesCheckType.RENAME;
             files.setFilePath(file.getPath());
         }

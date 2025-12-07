@@ -13,7 +13,7 @@ public class ReadLog {
     @TableId(type = IdType.AUTO)
     protected Integer id;
     protected LocalDateTime time;
-    protected Integer bookId;
+    protected Integer filesId;
     protected Integer seconds;
 
     @TableLogic

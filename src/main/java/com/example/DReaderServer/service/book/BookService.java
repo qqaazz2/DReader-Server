@@ -15,17 +15,21 @@ import java.util.Map;
 public interface BookService {
     List<Book> createData(List<Book> list);
 
-    PageVO<BookListDTO> getList(BookListQueryCondition queryCondition);
+    Book getData(Integer filesId);
 
-    Book updateData(Book book);
-
-    Map<String,Object> updateProgress(BookListDTO bookListDTO);
-
-    List<BookCoverDTO> getCoverList(Integer id);
-
-    BookListDTO getRecent();
-
-    Map<String,Integer> getOverview();
-
-    Map<String,String> changeCover(Integer id,MultipartFile file);
+    Book createData(Integer filesId);
+//
+//    PageVO<BookListDTO> getList(BookListQueryCondition queryCondition);
+//
+//    Book updateData(Book book);
+//
+    Map<String,Object> updateProgress(Book book);
+//
+//    List<BookCoverDTO> getCoverList(Integer id);
+//
+//    BookListDTO getRecent();
+//
+//    Map<String,Integer> getOverview();
+//
+//    Map<String,String> changeCover(Integer id,MultipartFile file);
 }

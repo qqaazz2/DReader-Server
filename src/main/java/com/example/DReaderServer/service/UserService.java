@@ -27,4 +27,6 @@ public interface UserService extends IService<User> {
     void updateMysteryPassWord(String oldPassWord,String newPassword);
 
     String updateImage(MultipartFile multipartFile);
+
+    void changeFileAdapter(String adapter);
 }

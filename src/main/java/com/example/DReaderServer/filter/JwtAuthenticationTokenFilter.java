@@ -24,6 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.security.sasl.AuthenticationException;
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,15 +33,19 @@ import java.util.regex.Pattern;
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private final TokenService tokenService;
     private final RedisTemplate redisTemplate;
+    private final List<String> passList = List.of("/user/login", "/user/code", "/image/system/view");
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
             String token = tokenService.getRequestToken(request);
-            if ("/user/login".equals(request.getRequestURI()) || "/user/code".equals(request.getRequestURI())) {
+            System.out.println(request.getRequestURI());
+            if (passList.contains(request.getRequestURI())) {
                 filterChain.doFilter(request, response);
                 return;
             }
+
             if (token == null || token.trim().isEmpty()) throw new AuthenticationException("请先登录");
 
             String userName = tokenService.getUserNameFromToken(token);

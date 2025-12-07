@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.DReaderServer.mapper.files.FilesAuthorMapper">
+    <resultMap id="fileDetailsAuthor" type="com.example.DReaderServer.dto.files.FilesDetailsItemDTO$FilesDetailsAuthor">
+        <id column="id" property="id"/>
+        <result column="author_id" property="authorId"/>
+        <result column="name" property="name"/>
+    </resultMap>
+
+    <select id="getAuthorByFilesId" resultMap="fileDetailsAuthor" parameterType="int">
+        SELECT
+            files_author.id,
+            author.id as author_id,
+            name
+        FROM
+            files_author
+        INNER JOIN author ON files_author.author_id = author.id AND author.deleted = 1
+        WHERE files_author.deleted = 1
+        <if test="id != null and id != ''">
+            and files_author.files_id=#{id}
+        </if>
+    </select>
+
+</mapper>

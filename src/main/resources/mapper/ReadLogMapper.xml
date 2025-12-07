@@ -20,12 +20,12 @@
         ROUND( seconds / 60, 0 ) AS minutes
         id,
         book_id,
-        modifiable_name as book_name
+        `name` as book_name
         time,
         FROM
         read_log
         JOIN book ON read_log.book_id = book.id AND book.deleted = 1
-        JOIN files ON book.files_id = files.id AND files.deleted = 1
+        JOIN files_detail ON book.files_id = files_details.files_id AND files_details.deleted = 1
         WHERE
         `time` BETWEEN #{startTime} AND #{endTime} AND deleted = 1
     </select>

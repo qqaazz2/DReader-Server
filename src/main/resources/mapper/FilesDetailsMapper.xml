@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.DReaderServer.mapper.files.FilesDetailsMapper">
+    <resultMap id="fileDetailsList" type="com.example.DReaderServer.dto.files.FilesDetailsListDTO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="over_status" property="overStatus"/>
+        <result column="status" property="status"/>
+        <result column="love" property="love"/>
+        <result column="cover" property="cover"/>
+        <result column="files_id" property="filesId"/>
+        <result column="is_folder" property="isFolder"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="file_path" property="filePath"/>
+    </resultMap>
+
+    <resultMap id="fileOverviewList" type="com.example.DReaderServer.dto.files.FilesOverviewListDTO">
+        <result column="over_status" property="overStatus"/>
+        <result column="status" property="status"/>
+        <result column="love" property="love"/>
+        <result column="is_folder" property="isFolder"/>
+    </resultMap>
+
+    <resultMap id="fileDetailsItem" type="com.example.DReaderServer.dto.files.FilesDetailsItemDTO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="cover" property="cover"/>
+        <result column="over_status" property="overStatus"/>
+        <result column="status" property="status"/>
+        <result column="love" property="love"/>
+        <result column="files_id" property="filesId"/>
+        <result column="is_folder" property="isFolder"/>
+        <result column="last_read_time" property="lastReadTime"/>
+        <result column="profile" property="profile"/>
+        <result column="bgm_id" property="bgmId"/>
+        <result column="date" property="date"/>
+        <result column="original_name" property="originalName"/>
+        <result column="file_path" property="filePath"/>
+        <result column="parent_id" property="parentId"/>
+    </resultMap>
+
+    <select id="getList" resultMap="fileDetailsList" parameterType="com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition">
+        SELECT
+            files_details.id,
+            files_details.over_status,
+            files_details.`status`,
+            files_details.love,
+            `name`,
+            files_details.cover,
+            files_details.files_id,
+            files.is_folder,
+            parent_id,
+            file_path
+        FROM
+            files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        <if test="authorId != null and authorId != ''">
+            INNER JOIN files_author
+            ON files_author.files_id = files.id
+            AND files_author.author_id = #{authorId}
+            AND files_author.deleted = 1
+        </if>
+        WHERE files_details.deleted = 1
+        <if test="parentId != null and parentId != ''">
+            and parent_id = #{parentId}
+        </if>
+        <if test="love != null and love != ''">
+            and love = #{love}
+        </if>
+        <if test="name != null and name != ''">
+            <bind name="pattern" value="'%' + name + '%'"/>
+            and files_details.`name` LIKE #{pattern}
+        </if>
+        <if test="status != null and status != ''">
+            and files_details.`status` = #{status}
+        </if>
+        <if test="overStatus != null and overStatus != ''">
+            and over_status = #{overStatus}
+        </if>
+        <if test="isFolder != null and isFolder != ''">
+            and is_folder = #{isFolder}
+        </if>
+        <if test="sortField != null and sortField != ''">
+            <choose>
+                <when test="sortField == 'name'">
+                    ORDER BY files_details.`name` ${sortOrder}
+                </when>
+                <when test="sortField == 'lastReadTime'">
+                    ORDER BY series.last_read_time ${sortOrder}
+                </when>
+                <when test="sortField == 'createTime'">
+                    ORDER BY series.add_time ${sortOrder}
+                </when>
+            </choose>
+        </if>
+        LIMIT #{offset},#{limit}
+    </select>
+    <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition">
+        SELECT count(*) FROM files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        <if test="authorId != null and authorId != ''">
+            INNER JOIN files_author
+            ON files_author.files_id = files.id
+            AND files_author.author_id = #{authorId}
+            AND files_author.deleted = 1
+        </if>
+        WHERE files_details.deleted = 1
+            <if test="parentId != null and parentId != ''">
+            and parent_id = #{parentId}
+        </if>
+        <if test="love != null and love != ''">
+            and love = #{love}
+        </if>
+        <if test="name != null and name != ''">
+            <bind name="pattern" value="'%' + name + '%'"/>
+            and files_details.`name` LIKE #{pattern}
+        </if>
+        <if test="status != null and status != ''">
+            and files_details.`status` = #{status}
+        </if>
+        <if test="overStatus != null and overStatus != ''">
+            and over_status = #{overStatus}
+        </if>
+        <if test="isFolder != null and isFolder != ''">
+            and is_folder = #{isFolder}
+        </if>
+    </select>
+
+    <select id="getOne" resultMap="fileDetailsItem" parameterType="int">
+        SELECT
+        files_details.id,
+        files_details.`name`,
+        files_details.cover,
+        files_details.over_status,
+        files_details.`status`,
+        files_details.love,
+        files_details.files_id,
+        files.is_folder,
+        files_details.last_read_time,
+        files_details.`profile`,
+        files_details.bgm_id,
+        files_details.date,
+        files_details.original_name,
+        parent_id,
+        file_path
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        WHERE files_details.deleted = 1
+        AND files_details.files_id = #{id}
+    </select>
+
+
+    <select id="getRecent" resultMap="fileDetailsList">
+        SELECT
+        files_details.id,
+        files_details.over_status,
+        files_details.`status`,
+        files_details.love,
+        `name`,
+        files_details.cover,
+        files_details.files_id,
+        files.is_folder,
+        parent_id,
+        file_path
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        WHERE files_details.deleted = 1 AND files_details.`status` in (2,3)
+        ORDER BY `last_read_time` DESC
+        LIMIT 1
+    </select>
+
+    <select id="getStatusByParentId" resultType="int" parameterType="int">
+        SELECT files_details.status
+        FROM files
+        INNER JOIN files_details ON files.id = files_details.files_id AND files_details.deleted = 1
+        WHERE files.deleted = 1
+        AND parent_id = #{id}
+    </select>
+
+    <select id="getList" resultMap="fileDetailsList" parameterType="com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition">
+        SELECT
+        files_details.id,
+        files_details.over_status,
+        files_details.`status`,
+        files_details.love,
+        `name`,
+        files_details.cover,
+        files_details.files_id,
+        files.is_folder,
+        parent_id,
+        file_path
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        <if test="authorId != null and authorId != ''">
+            INNER JOIN files_author
+            ON files_author.files_id = files.id
+            AND files_author.author_id = #{authorId}
+            AND files_author.deleted = 1
+        </if>
+        WHERE files_details.deleted = 1
+        <if test="parentId != null and parentId != ''">
+            and parent_id = #{parentId}
+        </if>
+        <if test="love != null and love != ''">
+            and love = #{love}
+        </if>
+        <if test="name != null and name != ''">
+            <bind name="pattern" value="'%' + name + '%'"/>
+            and files_details.`name` LIKE #{pattern}
+        </if>
+        <if test="status != null and status != ''">
+            and files_details.`status` = #{status}
+        </if>
+        <if test="overStatus != null and overStatus != ''">
+            and over_status = #{overStatus}
+        </if>
+        <if test="isFolder != null and isFolder != ''">
+            and is_folder = #{isFolder}
+        </if>
+        <if test="sortField != null and sortField != ''">
+            <choose>
+                <when test="sortField == 'name'">
+                    ORDER BY files_details.`name` ${sortOrder}
+                </when>
+                <when test="sortField == 'lastReadTime'">
+                    ORDER BY series.last_read_time ${sortOrder}
+                </when>
+                <when test="sortField == 'createTime'">
+                    ORDER BY series.add_time ${sortOrder}
+                </when>
+            </choose>
+        </if>
+        LIMIT #{offset},#{limit}
+    </select>
+    <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition">
+        SELECT count(*) FROM files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        <if test="authorId != null and authorId != ''">
+            INNER JOIN files_author
+            ON files_author.files_id = files.id
+            AND files_author.author_id = #{authorId}
+            AND files_author.deleted = 1
+        </if>
+        WHERE files_details.deleted = 1
+        <if test="parentId != null and parentId != ''">
+            and parent_id = #{parentId}
+        </if>
+        <if test="love != null and love != ''">
+            and love = #{love}
+        </if>
+        <if test="name != null and name != ''">
+            <bind name="pattern" value="'%' + name + '%'"/>
+            and files_details.`name` LIKE #{pattern}
+        </if>
+        <if test="status != null and status != ''">
+            and files_details.`status` = #{status}
+        </if>
+        <if test="overStatus != null and overStatus != ''">
+            and over_status = #{overStatus}
+        </if>
+        <if test="isFolder != null and isFolder != ''">
+            and is_folder = #{isFolder}
+        </if>
+    </select>
+
+    <select id="getOverview" resultMap="fileOverviewList">
+        SELECT
+        files_details.over_status,
+        files_details.`status`,
+        files_details.love,
+        files.is_folder
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        WHERE files_details.deleted = 1
+    </select>
+</mapper>

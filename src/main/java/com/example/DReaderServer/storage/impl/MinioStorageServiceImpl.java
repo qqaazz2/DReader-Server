@@ -1,27 +1,23 @@
-package com.example.DReaderServer.service;
+package com.example.DReaderServer.storage.impl;
 
 import com.example.DReaderServer.common.BizException;
+import com.example.DReaderServer.storage.FileAdapterService;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.http.Method;
-import jakarta.annotation.Resource;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
-public class UploadService {
+public class MinioStorageServiceImpl extends FileAdapterService {
 
     @Value("${minio.bucket}")
     String bucket;
@@ -29,57 +25,58 @@ public class UploadService {
     @Autowired
     private MinioClient minioClient;
 
+    @Value("${file.upload}")
+    String upload;
+
+    @Override
     public String upload(File file) {
         try (InputStream inputStream = new FileInputStream(file)) {
             String contentType = Files.probeContentType(file.toPath());
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucket)
-                    .object(file.getPath())
+                    .object(upload + file.getPath())
                     .stream(inputStream, file.length(), -1)
                     .contentType(contentType) // 可选
                     .build();
             minioClient.putObject(putObjectArgs);
 
-            return getObject(file.getPath());
+            return getUrl(file.getPath());
         } catch (Exception e) {
             throw new BizException("4000", "上传失败");
         }
     }
 
+    @Override
     public String upload(byte[] data, String fileName, String contentType) {
         fileName = fileName.replaceAll("\\\\", "/");
-//        fileName = fileName.replaceFirst("/", "");
         try (InputStream inputStream = new ByteArrayInputStream(data)) {
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucket)
-                    .object(fileName)
+                    .object(upload + fileName)
                     .stream(inputStream, data.length, -1)
                     .contentType(contentType) // 可选
                     .build();
             minioClient.putObject(putObjectArgs);
+            data = null;
         } catch (Exception e) {
             throw new BizException("4000", "上传失败");
         }
-
         return fileName;
     }
 
-    public String getObject(String objectName) {
+    @Override
+    public String getUrl(String objectName) {
         if (objectName == null || objectName.isBlank()) return null;
 
         try {
             return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder().bucket(bucket).object(objectName).expiry(300).method(Method.GET).build());
         } catch (Exception e) {
-            throw new BizException("4000","图片同步失败，请检查Minio服务状态");
+            throw new BizException("4000", "图片同步失败，请检查Minio服务状态");
         }
     }
 
-    private String generateUrl(String objectName) {
-        try {
-            String url = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder().bucket(bucket).object(objectName).expiry(300).method(Method.GET).build());
-            return url;
-        } catch (Exception e) {
-            throw new BizException("4000", "图片同步失败");
-        }
+    @Override
+    public String getStorageType() {
+        return "minio";
     }
 }
