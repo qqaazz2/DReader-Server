@@ -45,7 +45,6 @@ public class UserController {
 
     @PostMapping("/setInfo")
     public ResultResponse setUserInfo(@RequestBody UserInfo userInfo) {
-        System.out.println(userInfo.getName());
         return ResultResponse.success(userService.setUserInfo(userInfo));
     }
 
@@ -64,6 +63,12 @@ public class UserController {
     @PostMapping("/uploadCover")
     public ResultResponse uploadCover(@RequestParam MultipartFile file) {
         return ResultResponse.success(userService.updateImage(file));
+    }
+
+    @GetMapping("/changeFileAdapter")
+    public ResultResponse changeFileAdapter(@RequestParam String adapter) {
+        userService.changeFileAdapter(adapter);
+        return ResultResponse.success();
     }
 
     @PreAuthorize("@customPermissionEvaluator.hasPermission(authentication,null,1)")

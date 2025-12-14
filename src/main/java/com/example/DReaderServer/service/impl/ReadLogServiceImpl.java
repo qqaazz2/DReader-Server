@@ -99,7 +99,6 @@ public class ReadLogServiceImpl extends ServiceImpl<ReadLogMapper, ReadLog> impl
         List<ReadLogStatisticsDTO> finalList = new LinkedList<>();
         LocalDate localDate = startDate;
         while (!localDate.isAfter(endDate)){
-            System.out.println(localDate.toString());
             String date = localDate.format(FORMATTER);
             if(map.containsKey(date)){
                 finalList.add(map.get(date));

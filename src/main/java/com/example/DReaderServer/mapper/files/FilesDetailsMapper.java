@@ -3,10 +3,7 @@ package com.example.DReaderServer.mapper.files;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.DReaderServer.dto.book.SeriesListDTO;
 import com.example.DReaderServer.dto.book.SeriesListQueryCondition;
-import com.example.DReaderServer.dto.files.FilesDetailsItemDTO;
-import com.example.DReaderServer.dto.files.FilesDetailsListDTO;
-import com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition;
-import com.example.DReaderServer.dto.files.FilesOverviewListDTO;
+import com.example.DReaderServer.dto.files.*;
 import com.example.DReaderServer.entity.files.Files;
 import com.example.DReaderServer.entity.files.FilesDetails;
 import org.apache.ibatis.annotations.Mapper;
@@ -26,4 +23,6 @@ public interface FilesDetailsMapper extends BaseMapper<FilesDetails> {
     FilesDetailsListDTO getRecent();
 
     List<FilesOverviewListDTO> getOverview();
+
+    List<FilesCoverChangeDTO> getCoverList();
 }

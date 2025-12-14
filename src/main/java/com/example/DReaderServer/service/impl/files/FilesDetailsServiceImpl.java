@@ -185,7 +185,7 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
             String newCoverPath = "bookCover" + File.separator + DigestUtils.md5Hex(String.valueOf(LocalDateTime.now())) + ".jpg";
             LambdaUpdateWrapper<FilesDetails> updateWrapper = new LambdaUpdateWrapper<>();
             updateWrapper.eq(FilesDetails::getId, id);
-            newCoverPath = factory.getFileAdapter().upload(multipartFile.getBytes(), newCoverPath, "image/jpeg");
+            newCoverPath = factory.getFileAdapter().uploadSplicing(multipartFile.getBytes(), newCoverPath, "image/jpeg");
             updateWrapper.set(FilesDetails::getCover, newCoverPath);
             if (!this.update(updateWrapper)) throw new BizException();
             return newCoverPath;
@@ -215,7 +215,7 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
         FilesOverviewDTO dto = new FilesOverviewDTO();
         for (FilesOverviewListDTO item : list) {
             boolean isFolder = item.getIsFolder() == 1;
-            boolean isLove   = item.getLove() == 2;
+            boolean isLove = item.getLove() == 2;
             if (isFolder) {
                 dto.seriesCount++;
                 if (isLove) dto.loveSeriesCount++;
@@ -236,5 +236,12 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
             }
         }
         return dto;
+    }
+
+    @Override
+    public List<FilesDetails> updateFolderCover(List<FilesDetails> list) {
+        boolean success = this.updateBatchById(list);
+        if (!success) throw new BizException("4000", "更新系列阅读状态失败");
+        return list;
     }
 }

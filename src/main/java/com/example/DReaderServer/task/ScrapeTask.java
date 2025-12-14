@@ -298,7 +298,7 @@ public class ScrapeTask extends BaseTask {
                 if (bgmPersonsDTO == null) continue;
                 byte[] imageBytes = webClient.get().uri(bgmPersonsDTO.getImages().get("large")).retrieve().bodyToMono(byte[].class).timeout(Duration.ofSeconds(10)).retry(3).block();
                 if (imageBytes != null) {
-                    author.setAvatar(fileAdapterService.upload(imageBytes, "/authorAvatar/" + bgmPersonsDTO.getId() + ".jpg", "image/jpeg"));
+                    author.setAvatar(fileAdapterService.uploadSplicing(imageBytes, "/authorAvatar/" + bgmPersonsDTO.getId() + ".jpg", "image/jpeg"));
                     imageBytes = null;
                 }
                 author.setName(bgmPersonsDTO.getName());

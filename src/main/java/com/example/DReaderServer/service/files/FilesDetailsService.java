@@ -1,10 +1,7 @@
 package com.example.DReaderServer.service.files;
 
 import com.example.DReaderServer.dto.PageVO;
-import com.example.DReaderServer.dto.files.FilesDetailsItemDTO;
-import com.example.DReaderServer.dto.files.FilesDetailsListDTO;
-import com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition;
-import com.example.DReaderServer.dto.files.FilesOverviewDTO;
+import com.example.DReaderServer.dto.files.*;
 import com.example.DReaderServer.entity.files.FilesDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,4 +39,6 @@ public interface FilesDetailsService {
     String changeCover(Integer id,Integer childId);
 
     FilesOverviewDTO getOverview();
+
+    List<FilesDetails> updateFolderCover(List<FilesDetails> list);
 }

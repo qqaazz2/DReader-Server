@@ -33,7 +33,7 @@ public class AuthorServiceImpl extends ServiceImpl<AuthorMapper, Author> impleme
     public Author createAuthor(Author author) {
         try {
             if (author.getAvatarFile() != null && !author.getAvatarFile().isEmpty())
-                author.setAvatar(factory.getFileAdapter().upload(author.getAvatarFile().getBytes(), "/authorAvatar/" + System.currentTimeMillis() + ".jpg", "image/jpeg"));
+                author.setAvatar(factory.getFileAdapter().uploadSplicing(author.getAvatarFile().getBytes(), "/authorAvatar/" + System.currentTimeMillis() + ".jpg", "image/jpeg"));
             author.setAvatarFile(null);
             if (!this.save(author)) throw new BizException("4000", "创建作者数据失败");
             return author;
@@ -46,7 +46,6 @@ public class AuthorServiceImpl extends ServiceImpl<AuthorMapper, Author> impleme
     @Override
     public PageVO<AuthorListDTO> getList(AuthorListQueryCondition condition) {
         LambdaQueryWrapper<Author> queryWrapper = new LambdaQueryWrapper<>();
-        System.out.println(condition.getName());
         queryWrapper.like(condition.getName() != null && !condition.getName().isBlank(), Author::getName, condition.getName());
         Long count = this.count(queryWrapper);
         queryWrapper.select(Author::getName, Author::getAvatar, Author::getId).orderByDesc(Author::getId);
@@ -70,7 +69,7 @@ public class AuthorServiceImpl extends ServiceImpl<AuthorMapper, Author> impleme
     public Author updateAuthor(Author author) {
         try {
             if (author.getAvatarFile() != null && !author.getAvatarFile().isEmpty())
-                author.setAvatar(factory.getFileAdapter().upload(author.getAvatarFile().getBytes(), "/authorAvatar/" + System.currentTimeMillis() + ".jpg", "image/jpeg"));
+                author.setAvatar(factory.getFileAdapter().uploadSplicing(author.getAvatarFile().getBytes(), "/authorAvatar/" + System.currentTimeMillis() + ".jpg", "image/jpeg"));
             author.setAvatarFile(null);
             if (!this.updateById(author)) throw new BizException("4000", "编辑作者数据失败");
             return author;

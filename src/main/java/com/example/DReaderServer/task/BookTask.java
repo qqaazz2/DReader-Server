@@ -81,7 +81,7 @@ public class BookTask extends AsyncTask {
         checkInterrupted();
         deepCreate(createFiles, 1);
         List<Future<FilesDetails>> futureList = new ArrayList<>();
-        ExecutorService executor = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(5000));
+        ExecutorService executor = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(10000));
         for (Files files : epubList) {
             checkInterrupted(() -> executor.shutdownNow());
             Future<FilesDetails> future = executor.submit(new GetBookCoverTask(files, filesUtils, fileAdapterService, this.coverMap));
@@ -214,7 +214,7 @@ class GetBookCoverTask implements Callable<FilesDetails> {
                 if (epubBook.getCoverImage() == null) return filesDetails;
                 byte[] data = epubBook.getCoverImage().getData();
                 String cover = "bookCover" + File.separator + files.getHash() + ".jpg";
-                cover = fileAdapterService.upload(data, cover, "image/jpeg");
+                cover = fileAdapterService.uploadSplicing(data, cover, "image/jpeg");
                 filesDetails.setCover(cover);
                 data = null;
             } catch (TaskInterruptedException e) {

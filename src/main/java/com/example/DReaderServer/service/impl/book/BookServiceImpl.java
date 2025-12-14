@@ -59,7 +59,6 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
 
     @Override
     public List<Book> createData(List<Book> list) {
-        System.out.println(list);
         Boolean isTrue = this.saveBatch(list);
         if (!isTrue) throw new BizException("4000", "新增书籍阅读进度失败");
         return list;

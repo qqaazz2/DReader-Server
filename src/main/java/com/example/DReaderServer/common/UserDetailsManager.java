@@ -26,7 +26,6 @@ public class UserDetailsManager implements UserDetailsService, UserDetailsPasswo
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         LambdaQueryWrapper<User> queryWrapper = new QueryWrapper<User>().lambda();
         queryWrapper.eq(User::getEmail, username);
-        System.out.println(username);
         User user = userMapper.selectOne(queryWrapper);
         if (user == null) throw new BizException("系统用户不存在");
         LoginUser loginUser = new LoginUser();

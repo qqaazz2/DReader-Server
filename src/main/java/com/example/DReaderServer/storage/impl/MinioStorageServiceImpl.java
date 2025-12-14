@@ -2,20 +2,27 @@ package com.example.DReaderServer.storage.impl;
 
 import com.example.DReaderServer.common.BizException;
 import com.example.DReaderServer.storage.FileAdapterService;
-import io.minio.GetPresignedObjectUrlArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import io.minio.http.Method;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
+import io.minio.messages.DeletedObject;
+import io.minio.messages.Item;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class MinioStorageServiceImpl extends FileAdapterService {
 
@@ -47,12 +54,17 @@ public class MinioStorageServiceImpl extends FileAdapterService {
     }
 
     @Override
+    public String uploadSplicing(byte[] data, String fileName, String contentType) {
+       return upload(data,upload + fileName,contentType);
+    }
+
+    @Override
     public String upload(byte[] data, String fileName, String contentType) {
         fileName = fileName.replaceAll("\\\\", "/");
         try (InputStream inputStream = new ByteArrayInputStream(data)) {
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucket)
-                    .object(upload + fileName)
+                    .object(fileName)
                     .stream(inputStream, data.length, -1)
                     .contentType(contentType) // 可选
                     .build();
@@ -67,7 +79,7 @@ public class MinioStorageServiceImpl extends FileAdapterService {
     @Override
     public String getUrl(String objectName) {
         if (objectName == null || objectName.isBlank()) return null;
-
+        objectName = objectName.replaceAll("\\\\", "/");
         try {
             return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder().bucket(bucket).object(objectName).expiry(300).method(Method.GET).build());
         } catch (Exception e) {
@@ -78,5 +90,40 @@ public class MinioStorageServiceImpl extends FileAdapterService {
     @Override
     public String getStorageType() {
         return "minio";
+    }
+
+    @Override
+    public Set<String> getFileList(String path) {
+        Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucket).prefix(path + File.separator).recursive(false).build());
+        Set<String> fileNames = new HashSet<>();
+       try {
+           for (Result<Item> result : results) {
+               Item item = result.get();
+               if(item.isDir()) continue;
+               String objectName = item.objectName();
+               String fileName = objectName.substring(objectName.lastIndexOf("/") + 1);
+               fileNames.add(fileName);
+           }
+       }catch (Exception exception){
+           throw new BizException("4000", "获取文件列表失败");
+       }
+
+       return fileNames;
+    }
+
+    @Override
+    public void removeByList(Set<String> names) {
+        List<DeleteObject> deletedObjects = names.stream().map(DeleteObject::new).collect(Collectors.toList());
+        Iterable<Result<DeleteError>> results = minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucket).objects(deletedObjects).build());
+        List<DeleteError> errors = new ArrayList<>();
+        for (Result<DeleteError> r : results) {
+            try {
+                errors.add(r.get());
+            } catch (Exception e) {
+                throw new BizException("4000", "MiniO批量删除失败");
+            }
+        }
+
+        if (!errors.isEmpty()) throw new BizException("4000", "部分文件删除失败");
     }
 }

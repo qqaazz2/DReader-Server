@@ -12,19 +12,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/book")
 public class BookController {
-    @Resource
-    BookTask bookTask;
+
 //
     @Resource
     BookService bookService;
 //
-    @GetMapping("scanning")
-    public ResultResponse scanning(@RequestParam(defaultValue = "", required = false) String path) {
-        bookTask.startOrRestart(path);
-        return ResultResponse.success();
-    }
-
-
     @GetMapping("getData")
     public ResultResponse getData(@RequestParam Integer filesId) {
         return ResultResponse.success(bookService.getData(filesId));

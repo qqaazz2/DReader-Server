@@ -125,7 +125,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
             LoginUser loginUser = (LoginUser) authentication.getPrincipal();
             updateWrapper.eq(User::getId, loginUser.getUser().getId());
-            System.out.println(userInfo.getName());
             updateWrapper.set(userInfo.getName() != null, User::getName, userInfo.getName());
             updateWrapper.set(userInfo.getEmail() != null, User::getEmail, userInfo.getEmail());
             boolean isTrue = this.update(updateWrapper);
@@ -133,9 +132,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
             loginUser.getUser().setEmail(userInfo.getEmail());
             loginUser.getUser().setName(userInfo.getName());
-
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            tokenService.updateToken(loginUser.getUser());
             return userInfo;
         }
 
@@ -159,9 +156,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (!isTrue) throw new BizException("4000", "神秘开关状态修改失败");
 
             loginUser.getUser().setMystery(mystery);
-            System.out.println(loginUser.getUser().getMystery());
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            tokenService.updateToken(loginUser.getUser());
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
         }
@@ -169,7 +164,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public void updatePassWord(String oldPassWord, String newPassword) {
-        System.out.println(oldPassWord);
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
@@ -178,14 +172,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (!passwordEncoder.matches(oldPassWord, loginUser.getUser().getPassword())) {
                 throw new BizException("4000", "旧密码错误，修改密码失败");
             }
-
+            String password = passwordEncoder.encode(newPassword);
             updateWrapper.eq(User::getId, loginUser.getUser().getId());
             updateWrapper.set(User::getPassword, passwordEncoder.encode(newPassword));
             boolean isTrue = this.update(updateWrapper);
-
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             if (!isTrue) throw new BizException("4000", "密码修改失败");
+            loginUser.getUser().setPassword(password);
+            tokenService.updateToken(loginUser.getUser());
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
         }
@@ -209,9 +202,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (!isTrue) throw new BizException("4000", "神秘开关密码修改失败");
 
             loginUser.getUser().setMysteryPassword(mysteryPassWord);
-
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            tokenService.updateToken(loginUser.getUser());
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
         }
@@ -226,7 +217,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
             String path;
             try {
-                path = fileAdapterFactory.getFileAdapter().upload(multipartFile.getBytes(), cover, "image/jpeg");
+                path = fileAdapterFactory.getFileAdapter().uploadSplicing(multipartFile.getBytes(), cover, "image/jpeg");
             } catch (IOException e) {
                 throw new BizException("4000", "修改头像失败");
             }
@@ -237,8 +228,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (!update) throw new BizException("4000", "修改头像失败");
 
             loginUser.getUser().setCover(path);
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            tokenService.updateToken(loginUser.getUser());
             return path;
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
@@ -251,15 +241,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
             LoginUser loginUser = (LoginUser) authentication.getPrincipal();
             User user = loginUser.getUser();
-            String oldAdapter = user.getFileAdapter();
             LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
             lambdaUpdateWrapper.eq(User::getId, user.getId());
             lambdaUpdateWrapper.set(User::getFileAdapter, adapter);
-            if (!this.update(lambdaUpdateWrapper))    throw new BizException("4000", "修改文件适配器失败");
+            if (!this.update(lambdaUpdateWrapper)) throw new BizException("4000", "修改文件适配器失败");
             user.setFileAdapter(adapter);
-            loginUser.setUser(user);
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginUser, authentication.getCredentials());
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            tokenService.updateToken(user);
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
         }

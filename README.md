@@ -32,7 +32,7 @@ DReader-Server 是 [DReader](https://github.com/qqaazz2/DReader) 的服务端程
 - Maven 3.9+
 - MySQL 8.x
 - Redis 7.x
-- Minio
+- Minio（可选，用于书籍封面存储）
 - Docker / Docker Compose（可选，用于容器化部署）
 
 ### 2. 初始步骤
@@ -49,9 +49,6 @@ mvn clean package
 java -jar target/dreader-server-0.0.1-SNAPSHOT.jar
 ```
 ### 3. MinIO 配置
-项目依赖 MinIO 作为对象存储，用于存放书籍封面等文件。
-目前仅支持 MinIO 存储方式（暂不支持本地文件系统或其他云存储服务），请务必确保 MinIO 已启动。
-
 启动 MinIO（示例，使用 Docker）
 ```bash
 docker run -d \
@@ -62,7 +59,6 @@ docker run -d \
   -e "MINIO_ROOT_PASSWORD=admin123" \
   quay.io/minio/minio server /data --console-address ":9001"
 ```
->⚠️ MinIO 目前是存储书籍封面等文件的唯一方式，其他存储方式暂不支持，敬请谅解。
 
 ## 📂 支持的文件结构说明
 

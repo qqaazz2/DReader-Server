@@ -40,7 +40,6 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String token = tokenService.getRequestToken(request);
-            System.out.println(request.getRequestURI());
             if (passList.contains(request.getRequestURI())) {
                 filterChain.doFilter(request, response);
                 return;
@@ -48,8 +47,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
             if (token == null || token.trim().isEmpty()) throw new AuthenticationException("请先登录");
 
-            String userName = tokenService.getUserNameFromToken(token);
-            String key = tokenService.getTokenKey(userName);
+            String userEmail = tokenService.getUserNameFromToken(token);
+            String key = tokenService.getTokenKey(userEmail);
             User user = (User) redisTemplate.opsForValue().get(key);
             if (user == null) {
                 throw new AuthenticationException("用户登录已过期");

@@ -28,7 +28,7 @@ public class TokenService {
     @Value("${token.secret}")
     private String secret;
 
-    // 令牌有效期（默认30分钟）
+    // 令牌有效期（默认7天）
     @Value("${token.expireTime}")
     private long expireTime;
 
@@ -60,7 +60,6 @@ public class TokenService {
     public String createToken(User user) {
         refreshToken(user);
         Map<String, Object> claims = new HashMap<>();
-        claims.put(LOGIN_USER_KEY, user.getEmail());
         claims.put("TIME-DATE", System.currentTimeMillis());
         return createToken(claims);
     }
@@ -71,6 +70,11 @@ public class TokenService {
         user.setExpireTime(new Date(currentTimeMillis));
         redisTemplate.opsForValue().set(userKey, user);
         redisTemplate.expire(userKey, expireTime, TimeUnit.MINUTES);
+    }
+
+    public void updateToken(User user){
+        String userKey = getTokenKey(user.getEmail());
+        redisTemplate.opsForValue().set(userKey, user);
     }
 
 
