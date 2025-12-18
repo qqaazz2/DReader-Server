@@ -159,18 +159,18 @@ public class BookTask extends AsyncTask {
         for (Files files : list) {
             checkInterrupted();
             Boolean isTrue = files.getFileName().substring(files.getFileName().lastIndexOf(".") + 1).toLowerCase().equals("epub");
+
             if (files.getIsFolder() == 1) {
                 FilesDetails filesDetails = new FilesDetails();
                 filesDetails.setFilesId(files.getId());
-                filesDetails.setOriginalName(files.getFileName());
+                filesDetails.setName(files.getFileName());
                 filesDetails.setIsFolder(1);
                 filesDetailsMap.put(files.getId(), filesDetails);
             } else if (files.getIsFolder() == 2 && isTrue) {
                 epubList.add(files);
-            }
+            } else continue;
 
-            if (files.getIsFolder() == 2 && isTrue)
-                if (files.getChild() == null || files.getChild().size() == 0) continue;
+            if (files.getIsFolder() == 2 || files.getChild() == null || files.getChild().size() == 0) continue;
             List<Files> childes = files.getChild().stream().peek(value -> value.setParentId(files.getId())).toList();
             deepCreate(childes, index += 1);
         }

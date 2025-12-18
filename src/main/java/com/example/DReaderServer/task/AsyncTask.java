@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.File;
 import java.util.*;
@@ -26,6 +28,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Transactional
 public abstract class AsyncTask {
     @Resource
     AsyncTaskExecutor taskExecutor;
@@ -122,11 +125,17 @@ public abstract class AsyncTask {
         setMapData();
         checkInterrupted();
         filesUtils.checkMetaFile(resourcesFile);
-        createFiles = deepFolder(resourcesFile.listFiles(), 1, resourcesFile.getPath(), -1, resourcesFile.getPath());
         finish();
         checkInterrupted();
         log.info("扫描完成");
-        scrapeTask.startOrRestart();
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit(){scrapeTask.startOrRestart();}
+            });
+        } else {
+            scrapeTask.startOrRestart();
+        }
     }
 
     protected void setMapData() {
@@ -212,8 +221,8 @@ public abstract class AsyncTask {
     }
 
 
-    @Transactional
     public void finish() {
+        createFiles = deepFolder(resourcesFile.listFiles(), 1, resourcesFile.getPath(), -1, resourcesFile.getPath());
         List<Future<FileTaskResult>> futures = new ArrayList<>();
         for (CheckFileTask checkFileTask : list) {
             checkInterrupted(() -> executor.shutdown());

@@ -43,7 +43,7 @@ public class SystemStorageServiceImpl extends FileAdapterService {
     @Override
     public String upload(byte[] data, String fileName, String contentType) {
         try {
-            File file = new File(upload + fileName);
+            File file = new File(fileName);
             File parentDir = file.getParentFile();
             if (!parentDir.exists()) {
                 parentDir.mkdirs();
