@@ -1,14 +1,14 @@
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/dreaderserver
-    username: root
-    password: root
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/dreaderserver}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
-      password:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
       timeout: 5000ms
   servlet:
     multipart:
@@ -38,7 +38,13 @@ server:
     max-http-form-post-size: 200MB
   port: 8081
 minio:
-  url: http://192.168.1.6:9090
-  bucket: dreader-server
-  access: admin
-  secret: B1zWgSyFyY
+  url: ${MINIO_URL:localhost}
+  bucket: ${MINIO_BUCKET:dreader}
+  access: ${MINIO_ACCESS:admin}
+  secret: ${MINIO_SECRET:admin123}
+management:
+  health:
+    db:
+      enabled: false
+    redis:
+      enabled: false

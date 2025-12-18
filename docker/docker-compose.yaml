@@ -19,17 +19,15 @@ services:
       - MYSQL_ROOT_HOST=%
     ports:
       - "3306:3306"
-    command: [
-        '--lower-case-table-names=1'
-    ]
     volumes:
       - ./mysql:/var/lib/mysql
       - ./init:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD","mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD" ]
       interval: 10s
-      timeout: 5s
+      timeout: 60s
       retries: 20
+      start_period: 20s
 
   service_springboot:
     build:
@@ -48,16 +46,17 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       #redis
 
-      #minio
-      MINIO_URL: http://127.0.0.1:9090
-      MINIO_BUCKET: dreader-server
-      MINIO_ACCESS: admin
-      MINIO_SECRET: B1zWgSyFyY
+      #minio（不需要可以不用填写）
+      # MINIO_URL: http://127.0.0.1:9090
+      # MINIO_BUCKET: dreader-server
+      # MINIO_ACCESS: admin
+      # MINIO_SECRET: B1zWgSyFyY
       #minio
     ports:
       - "8081:8081"
     depends_on:
       mysql:
         condition: service_healthy
+    restart: always
     volumes:
       - ./files/:/files/

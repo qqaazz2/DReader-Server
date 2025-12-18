@@ -9,10 +9,10 @@ CMD ["--server.port=8081"]
 WORKDIR /app
 
 # 将 Maven 构建的 JAR 文件复制到容器中
-COPY DReaderServer.jar app.jar
+COPY DReaderServer.jar DReaderServer.jar
 
 # 暴露应用的端口
 EXPOSE 8081
 
 # 运行 Spring Boot 应用
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "DReaderServer.jar"]
