@@ -136,7 +136,9 @@ public class ScrapeTask extends BaseTask {
             if (!filesIds.contains(filesDetails.getFilesId())) continue;
             try {
                 BgmSubjectDTO bgmSubjectDTO = startScrapeWorker(filesDetails);
-                Thread.sleep(1000);
+                System.out.println("我要睡觉了，我要睡5秒");
+                Thread.sleep(5000);
+                System.out.println("睡了5秒我起床了");
                 processing(filesDetails, bgmSubjectDTO);
             } catch (Exception exception) {
                 log.error(exception.getMessage());
@@ -188,7 +190,9 @@ public class ScrapeTask extends BaseTask {
             if (bgmSubjectDTO == null || bgmSubjectDTO.getId() == null)
                 throw new BizException("4000", filesDetails.getName() + " 搜索到了条目，但未找到匹配的系列");
             folderOriginalNameMap.put(filesDetails.getFilesId(), searchName);
-            Thread.sleep(1000);
+            System.out.println("我要睡觉了，我要睡2秒");
+            Thread.sleep(2000);
+            System.out.println("睡了2秒我起床了");
 
             List<BgmSubjectDTO> bgmSubjectDTOList = webClient.get().uri("/v0/subjects/{id}/subjects", bgmSubjectDTO.getId()).retrieve().bodyToFlux(BgmSubjectDTO.class).timeout(Duration.ofSeconds(10)).retry(3).doOnError(err -> log.error("BGM网络请求失败: {}", err.getMessage())).collectList().block();
             if (!bgmSubjectDTOList.isEmpty()) {
