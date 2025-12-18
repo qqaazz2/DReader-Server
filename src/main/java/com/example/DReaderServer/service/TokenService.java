@@ -60,6 +60,7 @@ public class TokenService {
     public String createToken(User user) {
         refreshToken(user);
         Map<String, Object> claims = new HashMap<>();
+        claims.put(LOGIN_USER_KEY, user.getEmail());
         claims.put("TIME-DATE", System.currentTimeMillis());
         return createToken(claims);
     }
