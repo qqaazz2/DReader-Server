@@ -101,4 +101,4 @@ books
 
 ## 许可证
 
-MIT
+GPLv3
