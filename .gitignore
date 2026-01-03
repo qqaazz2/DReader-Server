@@ -93,3 +93,5 @@ logs/
 .vscode/
 *.sublime-project
 *.sublime-workspace
+
+docker/

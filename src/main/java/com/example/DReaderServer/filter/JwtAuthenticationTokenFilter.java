@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private final TokenService tokenService;
     private final RedisTemplate redisTemplate;
-    private final List<String> passList = List.of("/user/login", "/user/code", "/image/system/view");
+    private final List<String> passList = List.of("/api/user/login", "/api/user/code", "/api/image/system/view");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

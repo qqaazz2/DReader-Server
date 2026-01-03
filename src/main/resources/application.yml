@@ -1,12 +1,12 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/dreaderserver}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://192.168.1.6:3306/dreaderserver}
     username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:h9R98yyD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      host: ${SPRING_DATA_REDIS_HOST:192.168.1.6}
       port: ${SPRING_DATA_REDIS_PORT:6379}
       password: ${SPRING_DATA_REDIS_PASSWORD:}
       timeout: 5000ms
@@ -34,6 +34,8 @@ file:
   upload: "/files/"
   meta: "metaData.json"
 server:
+  servlet:
+    context-path: /api
   tomcat:
     max-http-form-post-size: 200MB
   port: 8081
