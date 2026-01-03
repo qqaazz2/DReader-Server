@@ -2,6 +2,11 @@
 
 DReader 的后台服务，一个轻量级 EPUB 小说阅读器的服务端。
 
+## 初次登陆账密
+
+账号：1@gmail.com
+密码：1234561
+
 ## 项目简介
 
 DReader-Server 是 [DReader](https://github.com/qqaazz2/DReader) 的服务端程序，基于 Spring Boot 构建，旨在提供一个私有化、可自托管的 EPUB 书库管理与同步方案。它支持书籍存储、元数据解析与管理，并负责在不同设备间无缝同步阅读进度，是 DReader 客户端的核心后台支持。
