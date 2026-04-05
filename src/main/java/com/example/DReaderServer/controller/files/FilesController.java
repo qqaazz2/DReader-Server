@@ -73,8 +73,8 @@ public class FilesController {
 //        return ResultResponse.success(seriesService.getIdByFilesId(id));
 //    }
 //
-//    @GetMapping("/randomData")
-//    public ResultResponse randomData() {
-//        return ResultResponse.success(seriesService.randomData());
-//    }
+    @GetMapping("/randomData")
+    public ResultResponse randomData() {
+        return ResultResponse.success(filesDetailsService.randomData());
+    }
 }

@@ -218,4 +218,33 @@
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
         WHERE files_details.deleted = 1
     </select>
+
+    <select id="randomValidFiles" resultMap="filesCoverList">
+        SELECT
+        files_details.id,
+        files_details.files_id
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        WHERE files_details.deleted = 1 AND files_details.`status` in (1,3) AND is_folder = 1
+    </select>
+
+    <select id="randomData" resultMap="fileDetailsList" parameterType="long">
+        SELECT
+        files_details.id,
+        files_details.over_status,
+        files_details.`status`,
+        files_details.love,
+        `name`,
+        files_details.cover,
+        files_details.files_id,
+        files.is_folder,
+        parent_id,
+        file_path
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        WHERE files_details.deleted = 1 AND files_details.files_id = #{id}
+        LIMIT 1
+    </select>
 </mapper>

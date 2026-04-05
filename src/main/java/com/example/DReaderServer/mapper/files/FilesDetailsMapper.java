@@ -22,6 +22,10 @@ public interface FilesDetailsMapper extends BaseMapper<FilesDetails> {
 
     FilesDetailsListDTO getRecent();
 
+    List<FilesCoverChangeDTO> randomValidFiles();
+
+    FilesDetailsListDTO randomData(Long filesId);
+
     List<FilesOverviewListDTO> getOverview();
 
     List<FilesCoverChangeDTO> getCoverList();

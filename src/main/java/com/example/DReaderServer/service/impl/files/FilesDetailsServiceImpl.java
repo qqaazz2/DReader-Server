@@ -11,6 +11,7 @@ import com.example.DReaderServer.dto.PageVO;
 import com.example.DReaderServer.dto.book.SeriesListQueryCondition;
 import com.example.DReaderServer.dto.files.*;
 import com.example.DReaderServer.entity.book.BookFileCover;
+import com.example.DReaderServer.entity.files.Files;
 import com.example.DReaderServer.entity.files.FilesAuthor;
 import com.example.DReaderServer.entity.files.FilesDetails;
 import com.example.DReaderServer.entity.files.FilesTags;
@@ -243,5 +244,18 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
         boolean success = this.updateBatchById(list);
         if (!success) throw new BizException("4000", "更新系列阅读状态失败");
         return list;
+    }
+
+    @Override
+    public FilesDetailsListDTO randomData() {
+        List<FilesCoverChangeDTO> list = filesDetailsMapper.randomValidFiles();
+        if(list.isEmpty())throw new BizException("4000", "当前系统中的所有系列均已阅读完成，暂无未读内容");
+        Random random = new Random();
+        int index = random.nextInt(list.size());
+
+        FilesCoverChangeDTO filesCoverChangeDTO = list.get(index);
+        FilesDetailsListDTO filesDetailsListDTO = filesDetailsMapper.randomData(filesCoverChangeDTO.getFilesId());
+        if(filesDetailsListDTO == null)throw new BizException("4000", "随机系列获取失败，请稍后再试。");
+        return filesDetailsListDTO;
     }
 }

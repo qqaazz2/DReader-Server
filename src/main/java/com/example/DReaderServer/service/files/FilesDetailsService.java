@@ -26,6 +26,8 @@ public interface FilesDetailsService {
 
     FilesDetailsListDTO getRecent();
 
+    FilesDetailsListDTO randomData();
+
     FilesDetailsItemDTO getDetails(Long filesId);
 
     Date updateLastReadTime(Integer id);
