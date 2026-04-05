@@ -59,7 +59,7 @@ public class ReadLogServiceImpl extends ServiceImpl<ReadLogMapper, ReadLog> impl
     }
 
     @Override
-    public ReadLog startReadLog(Integer filesId) {
+    public ReadLog startReadLog(Long filesId) {
         LocalDate date = LocalDate.now();
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);

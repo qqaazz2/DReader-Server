@@ -43,7 +43,7 @@ public class FilesTagsServiceImpl extends ServiceImpl<FilesTagsMapper, FilesTags
     }
 
     @Override
-    public void removeByFilesIds(List<Integer> filesIds) {
+    public void removeByFilesIds(List<Long> filesIds) {
         if (filesIds == null || filesIds.isEmpty()) return;
         LambdaQueryWrapper<FilesTags> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.in(FilesTags::getFilesId, filesIds);
@@ -54,7 +54,7 @@ public class FilesTagsServiceImpl extends ServiceImpl<FilesTagsMapper, FilesTags
     }
 
     @Override
-    public List<FilesDetailsItemDTO.FilesDetailsTag> saveDataByFilesId(Integer filesId, List<FilesDetailsItemDTO.FilesDetailsTag> list) {
+    public List<FilesDetailsItemDTO.FilesDetailsTag> saveDataByFilesId(Long filesId, List<FilesDetailsItemDTO.FilesDetailsTag> list) {
         LambdaQueryWrapper<FilesTags> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(FilesTags::getFilesId, filesId);
         List<FilesTags> filesTagsList = this.list(lambdaQueryWrapper);
@@ -80,7 +80,7 @@ public class FilesTagsServiceImpl extends ServiceImpl<FilesTagsMapper, FilesTags
         List<FilesTags> addFilesTags = list.stream().filter(item -> !hasTagsIds.contains(item.getTagId())).map(item -> {
             FilesTags f = new FilesTags();
             f.setFilesId(filesId);
-            f.setTagsId(item.getId());
+            f.setTagsId(item.getTagId());
             return f;
         }).collect(Collectors.toList());
         if (!addFilesTags.isEmpty()) {

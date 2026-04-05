@@ -9,7 +9,7 @@ import lombok.Data;
 public class FilesTags {
     @TableId(type = IdType.AUTO)
     protected Integer id;
-    protected Integer filesId;
+    protected Long filesId;
     protected Integer tagsId;
     @TableLogic
     protected Integer deleted;

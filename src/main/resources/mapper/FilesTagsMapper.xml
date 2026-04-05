@@ -9,7 +9,7 @@
         <result column="name" property="name"/>
     </resultMap>
 
-    <select id="getTagsByFilesId" resultMap="fileDetailsTag" parameterType="int">
+    <select id="getTagsByFilesId" resultMap="fileDetailsTag" parameterType="long">
         SELECT
             files_tags.id,
             tags.id as tag_id,

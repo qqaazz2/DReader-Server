@@ -65,7 +65,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
     }
 
     @Override
-    public Book getData(Integer filesId) {
+    public Book getData(Long filesId) {
         LambdaQueryWrapper<Book> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Book::getFilesId, filesId);
         Book book = this.getOne(lambdaQueryWrapper);
@@ -74,7 +74,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
     }
 
     @Override
-    public Book createData(Integer filesId) {
+    public Book createData(Long filesId) {
         Book book = new Book();
         book.setFilesId(filesId);
         if (!this.save(book)) throw new BizException("4000", "新增书籍阅读进度失败");

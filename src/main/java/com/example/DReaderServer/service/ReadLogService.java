@@ -12,7 +12,7 @@ import java.util.List;
 public interface ReadLogService {
     ReadLog saveReadLog(Integer readLogId);
 
-    ReadLog startReadLog(Integer bookId);
+    ReadLog startReadLog(Long filesId);
 
     List<ReadLogStatisticsDTO> statisticsReadLog(String start,String end);
 

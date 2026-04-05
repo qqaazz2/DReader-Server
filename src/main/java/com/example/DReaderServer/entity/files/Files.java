@@ -10,8 +10,8 @@ import java.util.List;
 @Data
 public class Files {
 
-    @TableId(type = IdType.AUTO)
-    protected Integer id;
+    @TableId(type = IdType.ASSIGN_ID)
+    protected Long id;
 
     @TableField(fill = FieldFill.INSERT)
     protected Date add_time;
@@ -27,8 +27,7 @@ public class Files {
     private String fileType;
     private String fileNote;
     private Integer isFolder = 2;
-    private Integer type;
-    private Integer parentId;
+    private Long parentId;
     private String hash;
     private Integer sort;
     private String inode;
@@ -40,6 +39,8 @@ public class Files {
     private List<Files> child;
     @TableField(exist = false)
     private Integer count;
+    @TableField(exist = false)
+    private String fakeId;
 
     @Override
     public boolean equals(Object o) {

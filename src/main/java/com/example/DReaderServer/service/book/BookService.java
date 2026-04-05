@@ -15,9 +15,9 @@ import java.util.Map;
 public interface BookService {
     List<Book> createData(List<Book> list);
 
-    Book getData(Integer filesId);
+    Book getData(Long filesId);
 
-    Book createData(Integer filesId);
+    Book createData(Long filesId);
 //
 //    PageVO<BookListDTO> getList(BookListQueryCondition queryCondition);
 //

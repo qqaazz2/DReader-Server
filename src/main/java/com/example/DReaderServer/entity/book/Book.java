@@ -3,6 +3,7 @@ package com.example.DReaderServer.entity.book;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.ibatis.annotations.Update;
@@ -13,7 +14,8 @@ public class Book {
     @TableId(type = IdType.AUTO)
     Integer id;
 
-    Integer filesId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    Long filesId;
 
     Double progress;
 

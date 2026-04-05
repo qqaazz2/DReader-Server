@@ -42,7 +42,7 @@ public class FileKeyAdapter {
                 WinNT.FILE_SHARE_READ | WinNT.FILE_SHARE_WRITE | WinNT.FILE_SHARE_DELETE,
                 null,
                 WinNT.OPEN_EXISTING,
-                WinNT.FILE_ATTRIBUTE_NORMAL,
+                WinNT.FILE_FLAG_BACKUP_SEMANTICS,
                 null
         );
 
@@ -57,7 +57,8 @@ public class FileKeyAdapter {
             }
 
             long fileIndex = ((fileInfo.nFileIndexHigh.longValue()) << 32) | (fileInfo.nFileIndexLow.longValue() & 0xffffffffL);
-            return String.valueOf(fileIndex);
+            long volumeSerial = fileInfo.dwVolumeSerialNumber.longValue();
+            return volumeSerial + "-" + fileIndex;
         } finally {
             Kernel32.INSTANCE.CloseHandle(hFile);
         }

@@ -42,7 +42,7 @@ public class FilesController {
     }
 
     @GetMapping("/getDetails")
-    public ResultResponse getDetails(@RequestParam Integer id) {
+    public ResultResponse getDetails(@RequestParam Long id) {
         return ResultResponse.success(filesDetailsService.getDetails(id));
     }
 
@@ -58,7 +58,7 @@ public class FilesController {
     }
 
     @GetMapping("/updateStatus")
-    public ResultResponse updateStatus(@RequestParam Integer id, @RequestParam String lastReadTime) {
+    public ResultResponse updateStatus(@RequestParam Long id, @RequestParam String lastReadTime) {
         return ResultResponse.success(filesDetailsService.updateStatus(id, lastReadTime), "更新阅读状态及最后阅读时间成功");
     }
 

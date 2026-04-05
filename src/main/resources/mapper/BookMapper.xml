@@ -54,7 +54,6 @@
         LEFT JOIN files ON book.files_id = files.id
         WHERE
         files.deleted = 1
-        AND files.type = 1
         <if test="id != null and id != ''">
             and files.parent_id = #{id}
         </if>
@@ -70,7 +69,7 @@
     <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.book.BookListQueryCondition">
         SELECT count(*) FROM book
         LEFT JOIN files ON book.files_id = files.id
-        WHERE files.deleted = 1 AND files.type = 1
+        WHERE files.deleted = 1
         <if test="id != null and id != ''">
             and files.parent_id = #{id}
         </if>
@@ -91,7 +90,7 @@
         FROM
         book
         LEFT JOIN files ON book.files_id = files.id
-        WHERE files.deleted = 1 AND files.type = 1 AND files.parent_id = #{id}
+        WHERE files.deleted = 1 AND files.parent_id = #{id}
     </select>
 
     <select id="getCoverList" resultMap="bookCover" parameterType="java.lang.Integer">
@@ -125,7 +124,6 @@
         LEFT JOIN files ON book.files_id = files.id
         WHERE
         files.deleted = 1
-        AND files.type = 1
         AND book.status in (2,3)
         ORDER BY `read_time` DESC
         LIMIT 1

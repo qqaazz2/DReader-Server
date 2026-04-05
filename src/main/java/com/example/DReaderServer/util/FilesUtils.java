@@ -1,6 +1,7 @@
 package com.example.DReaderServer.util;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.example.DReaderServer.common.BizException;
 import com.example.DReaderServer.entity.files.Files;
 import com.example.DReaderServer.entity.MetaData;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,23 +48,22 @@ public class FilesUtils {
                     map.put(files.getFileName(), files);
                 }
                 String inode = FileKeyAdapter.getFileKey(file);
-                list.add(createFiles(file, type, -1, 0,inode));
+                list.add(createFiles(file,  -1L, 0, inode));
             }
             filesService.saveBatch(list);
             map.putAll(list.stream().collect(Collectors.toMap(Files::getFileName, files -> files)));
             return map;
         } catch (Exception e) {
-            throw new BizException("4000","文件创建失败：" + e.getMessage());
+            throw new BizException("4000", "文件创建失败：" + e.getMessage());
         }
     }
 
 
-    public Files createFiles(File file, Integer type, Integer parentId, Integer sort,String inode) {
+    public Files createFiles(File file, Long parentId, Integer sort, String inode) {
         Files files = new Files();
         try {
             files.setFileName(file.getName());
             files.setFilePath(file.getPath());
-            files.setType(type);
             files.setFileType(tika.detect(file));
             files.setFile(file);
             files.setFileSize(file.length());
@@ -78,50 +79,63 @@ public class FilesUtils {
         return files;
     }
 
-    public Files createFolder(File file, Integer parentId, Integer type, Integer size) {
-        Files files = new Files();
-        files.setFileName(file.getName());
-        files.setFilePath(file.getPath());
-        files.setFileType("folder");
-        files.setFile(file);
-        files.setIsFolder(1);
-        files.setType(type);
-        files.setInode("folder");
-        files.setFileSize(size.longValue());
-//        files.setModifiableName(file.getName());
-        if (parentId != -1) files.setParentId(parentId);
-        return files;
+    public Files createFolder(File file, Long parentId, Integer size,String customId) {
+        try {
+            Files files = new Files();
+            files.setFileName(file.getName());
+            files.setFilePath(file.getPath());
+            files.setId(IdWorker.getId());
+            files.setFileType("folder");
+            files.setFile(file);
+            files.setIsFolder(1);
+            files.setInode(FileKeyAdapter.getFileKey(file));
+            files.setHash(customId);
+            files.setFileSize(size.longValue());
+            files.setParentId(parentId);
+            return files;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new BizException("4000", "创建元数据文件夹失败");
+        }
     }
 
-    public boolean checkMetaFile(File file) {
+    public boolean checkMetaFile(String path) {
         ObjectMapper objectMapper = new ObjectMapper();
         MetaData metaData = new MetaData();
-        Path paths = Paths.get(file.getPath() + File.separator + metaName);
+        Path paths = Paths.get(path + File.separator + metaName);
         boolean type = java.nio.file.Files.exists(paths);
         if (type) return true;
+        return false;
+    }
+
+    public String createMetaFile(String path){
+        ObjectMapper objectMapper = new ObjectMapper();
+        MetaData metaData = new MetaData();
+        Path paths = Paths.get(path + File.separator + metaName);
         try {
-            java.nio.file.Files.createFile(paths);
-//            if (isWinSystem()) java.nio.file.Files.setAttribute(paths, "dos:hidden", true);
-            metaData.setName(file.getName());
+            if(!java.nio.file.Files.exists(paths)) java.nio.file.Files.createFile(paths);
+            String timePrefix = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
+            String uuid = timePrefix + "-" + UUID.randomUUID().toString();
+            metaData.setId(uuid);
             objectMapper.writeValue(paths.toFile(), metaData);
+            return uuid;
         } catch (IOException e) {
             e.printStackTrace();
             throw new BizException("4000", "创建元数据文件失败");
         }
-        return false;
     }
 
-    public MetaData checkFolderName(File file) {
+
+    public MetaData checkFolderId(String path) {
         ObjectMapper objectMapper = new ObjectMapper();
         MetaData metaData = new MetaData();
-        File metaFile = new File(file.getPath() + File.separator + metaName);
+        File metaFile = new File(path + File.separator + metaName);
         try {
             metaData = objectMapper.readValue(metaFile, MetaData.class);
         } catch (IOException e) {
             e.printStackTrace();
             throw new BizException("4000", "读取元数据文件信息失败");
         }
-
         return metaData;
     }
 
@@ -173,12 +187,12 @@ public class FilesUtils {
         return (float) (width * height) / 1000000;
     }
 
-    public void editMetaData(File file) {
-        Path paths = Paths.get(file.getPath() + File.separator + metaName);
+    public void editMetaData(String path,String uuid) {
+        Path paths = Paths.get(path + File.separator + metaName);
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             MetaData metaData = new MetaData();
-            metaData.setName(file.getName());
+            metaData.setId(uuid);
             objectMapper.writeValue(paths.toFile(), metaData);
         } catch (IOException e) {
             e.printStackTrace();

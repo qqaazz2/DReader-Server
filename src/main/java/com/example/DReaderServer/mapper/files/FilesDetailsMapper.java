@@ -16,9 +16,9 @@ public interface FilesDetailsMapper extends BaseMapper<FilesDetails> {
 
     Integer count(FilesDetailsListQueryCondition queryCondition);
 
-    FilesDetailsItemDTO getOne(Integer id);
+    FilesDetailsItemDTO getOne(Long fileId);
 
-    List<Integer> getStatusByParentId(int id);
+    List<Integer> getStatusByParentId(Long id);
 
     FilesDetailsListDTO getRecent();
 

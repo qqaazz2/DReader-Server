@@ -16,7 +16,7 @@ public class FilesDetails implements Serializable {
     Integer id;
     @NotNull(groups = {Update.class},message = "名称不能为空")
     String name;
-    Integer filesId;
+    Long filesId;
     Integer bgmId;
     Integer overStatus;
     Integer status;
@@ -38,7 +38,7 @@ public class FilesDetails implements Serializable {
     @TableField(exist = false)
     String hash;
     @TableField(exist = false)
-    Integer parentId;
+    Long parentId;
     @TableField(exist = false)
     Integer isFolder;
 }

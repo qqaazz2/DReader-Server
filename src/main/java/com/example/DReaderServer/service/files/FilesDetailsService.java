@@ -20,19 +20,19 @@ public interface FilesDetailsService {
 
     List<FilesDetails> getOriginalNameList();
 
-    void removeByFilesIds(List<Integer> filesIds);
+    void removeByFilesIds(List<Long> filesIds);
 
     PageVO<FilesDetailsListDTO> getList(FilesDetailsListQueryCondition filesDetailsListQueryCondition);
 
     FilesDetailsListDTO getRecent();
 
-    FilesDetailsItemDTO getDetails(Integer id);
+    FilesDetailsItemDTO getDetails(Long filesId);
 
     Date updateLastReadTime(Integer id);
 
     void updateLove(Integer id, Integer love);
 
-    int updateStatus(int filesId, String lastReadTime);
+    int updateStatus(Long filesId, String lastReadTime);
 
     String changeCover(Integer id, MultipartFile file);
 

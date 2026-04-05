@@ -77,7 +77,7 @@ public class CoverTask extends BaseTask {
         List<FilesCoverChangeDTO> list = filesDetailsMapper.getCoverList();
         Set<String> removeSet = list.stream().filter(filesSet::contains).map(FilesCoverChangeDTO::getCover).collect(Collectors.toSet());
         List<FilesCoverChangeDTO> dbHasNotFile = list.stream().filter(item -> !removeSet.contains(item.getCover())).collect(Collectors.toList());
-        Map<Integer, Integer> folderIdMap = new HashMap<>();
+        Map<Long, Integer> folderIdMap = new HashMap<>();
         if (check(currentGeneration)) return;
         ExecutorService executor = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(10000));
         try {
@@ -106,7 +106,7 @@ public class CoverTask extends BaseTask {
             return;
         }
 
-        Set<Integer> folderKeys = folderIdMap.keySet();
+        Set<Long> folderKeys = folderIdMap.keySet();
         List<FilesDetails> folders = list.stream().filter(item -> folderKeys.contains(item.getParentId()) && item.getSort() == 0).map(item -> {
             FilesDetails filesDetails = new FilesDetails();
             filesDetails.setId(folderIdMap.get(item.getParentId()));

@@ -3,6 +3,7 @@ package com.example.DReaderServer.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -13,7 +14,8 @@ public class ReadLog {
     @TableId(type = IdType.AUTO)
     protected Integer id;
     protected LocalDateTime time;
-    protected Integer filesId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    protected Long filesId;
     protected Integer seconds;
 
     @TableLogic

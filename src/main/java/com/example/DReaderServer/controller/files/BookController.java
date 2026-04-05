@@ -18,7 +18,7 @@ public class BookController {
     BookService bookService;
 //
     @GetMapping("getData")
-    public ResultResponse getData(@RequestParam Integer filesId) {
+    public ResultResponse getData(@RequestParam Long filesId) {
         return ResultResponse.success(bookService.getData(filesId));
     }
 //

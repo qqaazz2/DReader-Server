@@ -92,7 +92,7 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     }
 
     @Override
-    public void removeByFilesIds(List<Integer> filesIds) {
+    public void removeByFilesIds(List<Long> filesIds) {
         if (filesIds == null || filesIds.isEmpty()) return;
         LambdaQueryWrapper<FilesDetails> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.in(FilesDetails::getFilesId, filesIds);
@@ -128,8 +128,8 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     }
 
     @Override
-    public FilesDetailsItemDTO getDetails(Integer id) {
-        FilesDetailsItemDTO filesDetailsItemDTO = filesDetailsMapper.getOne(id);
+    public FilesDetailsItemDTO getDetails(Long filesId) {
+        FilesDetailsItemDTO filesDetailsItemDTO = filesDetailsMapper.getOne(filesId);
         if (filesDetailsItemDTO == null) throw new BizException("4000", "查询不到对应的文件数据");
         filesDetailsItemDTO.setFilesAuthors(filesAuthorMapper.getAuthorByFilesId(filesDetailsItemDTO.getFilesId()));
         filesDetailsItemDTO.setFilesTags(filesTagsMapper.getTagsByFilesId(filesDetailsItemDTO.getFilesId()));
@@ -154,7 +154,7 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     }
 
     @Override
-    public int updateStatus(int filesId, String lastReadTime) {
+    public int updateStatus(Long filesId, String lastReadTime) {
         List<Integer> statuses = filesDetailsMapper.getStatusByParentId(filesId);
         if (statuses.isEmpty()) throw new BizException("4000", "未查询到该系列下的子文件");
         int status;

@@ -11,7 +11,7 @@ import java.util.Map;
 @Service
 public interface FilesService {
 
-    List<Files> getByType(Integer type);
+    List<Files> getFilesList();
 
     List<Files> renameFiles(List<Files> files);
 

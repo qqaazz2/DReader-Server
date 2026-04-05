@@ -15,7 +15,7 @@ public class FilesDetailsListQueryCondition extends QueryCondition {
     private String name;
     private String sortField;
     private String sortOrder;
-    private Integer parentId;
+    private Long parentId;
     private Integer isFolder;
     private Integer authorId;
 

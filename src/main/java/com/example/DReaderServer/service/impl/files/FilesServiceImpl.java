@@ -50,9 +50,8 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
     FilesTagsService filesTagsService;
 
     @Override
-    public List<Files> getByType(Integer type) {
+    public List<Files> getFilesList() {
         LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Files::getType, type);
         return this.list(lambdaQueryWrapper);
     }
 
@@ -71,7 +70,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
 
     @Override
     public void removerFiles(List<Files> files) {
-        List<Integer> filesIds = files.stream().map(item -> item.getId()).collect(Collectors.toList());
+        List<Long> filesIds = files.stream().map(item -> item.getId()).collect(Collectors.toList());
         filesAuthorService.removeByFilesIds(filesIds);
         filesDetailsService.removeByFilesIds(filesIds);
         filesTagsService.removeByFilesIds(filesIds);
@@ -88,7 +87,6 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
     @Override
     public Files getFiles(Files files) {
         LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(files.getType() != null, Files::getType, files.getType());
         lambdaQueryWrapper.eq(files.getIsFolder() != null, Files::getIsFolder, files.getIsFolder());
         lambdaQueryWrapper.eq(files.getParentId() != null, Files::getParentId, files.getParentId());
         lambdaQueryWrapper.eq(!files.getFileName().isEmpty(), Files::getFileName, files.getFileName());
@@ -113,9 +111,8 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
 
         List<ProportionDTO> dtoList = new ArrayList<>();
         for (Files files : list) {
-            Integer type = files.getType();
             Integer count = files.getCount();
-            dtoList.add(new ProportionDTO(type, count));
+            dtoList.add(new ProportionDTO(1, count));
         }
 
         return dtoList;
@@ -147,7 +144,6 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
 
         LambdaQueryWrapper<Files> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Files::getIsFolder, 2);
-        queryWrapper.ne(Files::getType, 0);
         queryWrapper.select(Files::getAdd_time);
         List<LocalDateTime> list = this.listObjs(queryWrapper, obj -> (LocalDateTime) obj);
         List<Date> dateList = list.stream()

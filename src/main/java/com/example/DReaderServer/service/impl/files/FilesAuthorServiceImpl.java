@@ -29,7 +29,7 @@ public class FilesAuthorServiceImpl extends ServiceImpl<FilesAuthorMapper, Files
     }
 
     @Override
-    public void removeByFilesIds(List<Integer> filesIds) {
+    public void removeByFilesIds(List<Long> filesIds) {
         if (filesIds == null || filesIds.isEmpty()) return;
         LambdaQueryWrapper<FilesAuthor> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.in(FilesAuthor::getFilesId, filesIds);
@@ -41,7 +41,7 @@ public class FilesAuthorServiceImpl extends ServiceImpl<FilesAuthorMapper, Files
 
     @Override
     @Transactional(rollbackFor = Exception.class) // 记得加事务
-    public List<FilesDetailsItemDTO.FilesDetailsAuthor> saveDataByFilesId(Integer filesId, List<FilesDetailsItemDTO.FilesDetailsAuthor> list) {
+    public List<FilesDetailsItemDTO.FilesDetailsAuthor> saveDataByFilesId(Long filesId, List<FilesDetailsItemDTO.FilesDetailsAuthor> list) {
         LambdaQueryWrapper<FilesAuthor> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FilesAuthor::getFilesId, filesId);
         List<FilesAuthor> dbList = this.list(queryWrapper);

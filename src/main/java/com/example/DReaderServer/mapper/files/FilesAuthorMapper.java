@@ -10,5 +10,5 @@ import java.util.List;
 
 @Mapper
 public interface FilesAuthorMapper extends BaseMapper<FilesAuthor> {
-    List<FilesDetailsItemDTO.FilesDetailsAuthor> getAuthorByFilesId(Integer id);
+    List<FilesDetailsItemDTO.FilesDetailsAuthor> getAuthorByFilesId(Long id);
 }

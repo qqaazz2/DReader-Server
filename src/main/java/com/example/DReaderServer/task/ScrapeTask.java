@@ -92,12 +92,12 @@ public class ScrapeTask extends BaseTask {
     private Map<String, Integer> authorMap;
     private String tagKey = "tag:";
     private String authorKey = "author:";
-    private List<Integer> filesIds = new ArrayList<>();
+    private List<Long> filesIds = new ArrayList<>();
     private List<String> relationList = List.of("书系", "出版社", "作者", "插图");
-    private Map<Integer, String> folderOriginalNameMap = new HashMap<>();
-    private Map<Integer, Map<String, Integer>> seriesSubjects = new HashMap<>();
-    private Map<Integer, List<Integer>> authorFilesMap = new HashMap<>();
-    private Map<Integer, List<Integer>> tagFilesMap = new HashMap<>();
+    private Map<Long, String> folderOriginalNameMap = new HashMap<>();
+    private Map<Long, Map<String, Integer>> seriesSubjects = new HashMap<>();
+    private Map<Long, List<Integer>> authorFilesMap = new HashMap<>();
+    private Map<Long, List<Integer>> tagFilesMap = new HashMap<>();
     private String platformType = "小说";
     private static final Pattern VOLUME_PATTERN = Pattern.compile("\\((\\d+)\\)");
     private FileAdapterService fileAdapterService;

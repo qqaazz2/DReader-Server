@@ -10,5 +10,5 @@ import java.util.List;
 
 @Mapper
 public interface FilesTagsMapper extends BaseMapper<FilesTags> {
-    List<FilesDetailsItemDTO.FilesDetailsTag> getTagsByFilesId(Integer id);
+    List<FilesDetailsItemDTO.FilesDetailsTag> getTagsByFilesId(Long id);
 }

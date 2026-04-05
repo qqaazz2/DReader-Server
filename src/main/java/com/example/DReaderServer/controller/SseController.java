@@ -21,7 +21,6 @@ public class SseController {
 
     @GetMapping("/createSse")
     public SseEmitter createSse(){
-        log.info("asdasdasd");
         SseEmitter sseEmitter = sseClient.createSse();
         sseClient.sendMessage();
         return sseEmitter;

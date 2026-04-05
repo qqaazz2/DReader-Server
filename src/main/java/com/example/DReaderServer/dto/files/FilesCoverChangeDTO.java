@@ -7,8 +7,8 @@ public class FilesCoverChangeDTO {
     private Integer id;
     private String cover;
     private Integer isFolder;
-    private Integer filesId;
-    private Integer parentId;
+    private Long filesId;
+    private Long parentId;
     private String filePath;
     private Integer sort;
     private String name;

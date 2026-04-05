@@ -1,5 +1,6 @@
 package com.example.DReaderServer.dto.files;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,7 +15,8 @@ public class FilesDetailsItemDTO {
     private Integer overStatus;
     private Integer status;
     private Integer love;
-    private Integer filesId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Long filesId;
     private Integer isFolder;
     private String lastReadTime;
     private String profile;
@@ -22,7 +24,8 @@ public class FilesDetailsItemDTO {
     private String date;
     private String originalName;
     private String filePath;
-    private Integer parentId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Long parentId;
 
     private List<FilesDetailsAuthor> filesAuthors = new ArrayList<>();
     private List<FilesDetailsTag> filesTags = new ArrayList<>();

@@ -9,7 +9,7 @@
         <result column="name" property="name"/>
     </resultMap>
 
-    <select id="getAuthorByFilesId" resultMap="fileDetailsAuthor" parameterType="int">
+    <select id="getAuthorByFilesId" resultMap="fileDetailsAuthor" parameterType="long">
         SELECT
             files_author.id,
             author.id as author_id,

@@ -10,7 +10,7 @@ import java.util.List;
 public interface FilesAuthorService {
     List<FilesAuthor> createList(List<FilesAuthor> list);
 
-    void removeByFilesIds(List<Integer> filesIds);
+    void removeByFilesIds(List<Long> filesIds);
 
-    List<FilesDetailsItemDTO.FilesDetailsAuthor> saveDataByFilesId(Integer filesId,List<FilesDetailsItemDTO.FilesDetailsAuthor> list);
+    List<FilesDetailsItemDTO.FilesDetailsAuthor> saveDataByFilesId(Long filesId,List<FilesDetailsItemDTO.FilesDetailsAuthor> list);
 }

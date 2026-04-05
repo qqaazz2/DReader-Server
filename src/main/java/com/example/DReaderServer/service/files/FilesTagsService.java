@@ -11,7 +11,7 @@ import java.util.List;
 public interface FilesTagsService {
     List<FilesTags> createList(List<FilesTags> list);
 
-    void removeByFilesIds(List<Integer> filesIds);
+    void removeByFilesIds(List<Long> filesIds);
 
-    List<FilesDetailsItemDTO.FilesDetailsTag> saveDataByFilesId(Integer filesId, List<FilesDetailsItemDTO.FilesDetailsTag> list);
+    List<FilesDetailsItemDTO.FilesDetailsTag> saveDataByFilesId(Long filesId, List<FilesDetailsItemDTO.FilesDetailsTag> list);
 }

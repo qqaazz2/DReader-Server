@@ -17,7 +17,7 @@ public class ReadLogController {
     ReadLogService readLogService;
 
     @GetMapping("start")
-    public ResultResponse start(@RequestParam Integer filesId) {
+    public ResultResponse start(@RequestParam Long filesId) {
         return ResultResponse.success(readLogService.startReadLog(filesId));
     }
 

@@ -1,7 +1,6 @@
 package com.example.DReaderServer.enums;
 
-public enum FilesCheckType {
+public enum FilesOperationType {
     CREATE,
-    RENAME,
-    NORMAL, 
+    EDIT,
 }

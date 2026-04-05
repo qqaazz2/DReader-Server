@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class AuthorFilesDTO {
-    int filesId;
+    long filesId;
     int filesAuthorId;
     String name;
     String cover;
