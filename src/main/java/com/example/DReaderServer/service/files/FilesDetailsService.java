@@ -43,4 +43,6 @@ public interface FilesDetailsService {
     FilesOverviewDTO getOverview();
 
     List<FilesDetails> updateFolderCover(List<FilesDetails> list);
+
+    void updateStatusByField(UpdateStatusRequestDTO updateStatusRequestDTO);
 }

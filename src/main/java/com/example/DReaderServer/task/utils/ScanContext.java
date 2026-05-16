@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Data
 public class ScanContext {
     private List<Files> filesList = new ArrayList<>(); //数据中存储的文件信息集
-    private Map<String, Files> folderByHashMap = new HashMap<>(); //数据中存储的文件信息集
+    private Map<Long, Files> folderByIdMap = new HashMap<>(); //数据中存储的文件信息集
     private Map<String, Files> filesByInodeMap = new HashMap<>(); //数据中存储的文件信息集
     private HashMap<String, Files> checkMap = new HashMap<>(); //获取到已经检测出来的文件信息
     private List<Files> createFiles = new ArrayList<>(); //需要新增的文件夹
@@ -33,7 +33,7 @@ public class ScanContext {
         resourcesFile = new File(resourcesPath);
         if (resourcesFile.isFile()) throw new RuntimeException("扫描路径不是文件夹");
         this.filesList = filesList;
-        folderByHashMap = filesList.stream().filter(item -> item.getIsFolder() == 1).collect(Collectors.toMap(Files::getHash, item -> item));
+        folderByIdMap = filesList.stream().filter(item -> item.getIsFolder() == 1).collect(Collectors.toMap(Files::getId, item -> item));
         filesByInodeMap = filesList.stream().collect(Collectors.toMap(Files::getInode, item -> item));
     }
 //    private List<CheckFileTask> list = new ArrayList<>();

@@ -30,9 +30,8 @@ public class FileKeyAdapter {
 
     private static String getFileKeyUnix(File file) throws IOException {
         Path path = file.toPath();
-        BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-        Object fileKey = attrs.fileKey();
-        return fileKey != null ? fileKey.toString() : null;
+        Object ino = Files.getAttribute(path, "unix:ino");
+        return ino.toString();
     }
 
     private static String getFileKeyWindows(File file) throws IOException {

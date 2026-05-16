@@ -81,13 +81,13 @@ public class FileWalker {
         if (!filesUtils.checkMetaFile(file.getPath())) {
             checkInterrupted();
             type = FilesCheckType.CREATE;
-            String metaDataId = filesUtils.createMetaFile(file.getPath());
-            files = filesUtils.createFolder(file, parentID, childCount, metaDataId);
+            files = filesUtils.createFolder(file, parentID, childCount);
+            filesUtils.createMetaFile(file.getPath(),files.getId());
         } else {
             //获取文件夹中的metadata
             MetaData metaData = filesUtils.checkFolderId(file.getPath());
             String metaDataId = metaData.getId();
-            files = scanContext.getFolderByHashMap().get(metaDataId);
+            files = scanContext.getFolderByIdMap().get(Long.parseLong(metaDataId));
             checkInterrupted();
             //如果metadata文件中的id和数据库中的值一样并且inode也一样就说明是同一条数据，否则将视为新的文件夹需要创建新的文件
             if (files != null && FileKeyAdapter.getFileKey(file).equals(files.getInode())) {
@@ -104,8 +104,8 @@ public class FileWalker {
                 //这里是判断metadata中的id在数据库中不存在，不存在则当该文件夹为新建文件夹
                 checkInterrupted();
                 type = FilesCheckType.CREATE;
-                metaDataId = filesUtils.createMetaFile(file.getPath());
-                files = filesUtils.createFolder(file, parentID, childCount, metaDataId);
+                files = filesUtils.createFolder(file, parentID, childCount);
+                filesUtils.createMetaFile(file.getPath(),files.getId());
             }
         }
 

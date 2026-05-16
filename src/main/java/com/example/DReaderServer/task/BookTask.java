@@ -64,7 +64,7 @@ public class BookTask extends AsyncTask {
         fileAdapterService = fileAdapterFactory.getFileAdapter();
         List<Book> bookList = new ArrayList<>();
         List<FilesDetails> filesDetailsList = new ArrayList<>();
-        Map<Long, FilesDetails> filesDetailsMap = new HashMap<>();
+        Map<Long, Integer> filesDetailsMap = new HashMap<>();
         checkInterrupted();
         List<Future<FilesDetails>> futureList = new ArrayList<>();
         ExecutorService executor = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(10000));;
@@ -83,7 +83,8 @@ public class BookTask extends AsyncTask {
                 filesDetails.setFilesId(files.getId());
                 filesDetails.setName(files.getFileName());
                 filesDetails.setIsFolder(1);
-                filesDetailsMap.put(files.getId(), filesDetails);
+                filesDetailsList.add(filesDetails);
+                filesDetailsMap.put(files.getId(), filesDetailsList.size() == 0 ? 0 : filesDetailsList.size() - 1);
             }
         }
         executor.shutdown();
@@ -94,10 +95,9 @@ public class BookTask extends AsyncTask {
             try {
                 FilesDetails details = future.get();
                 if (filesDetailsMap.containsKey(details.getParentId())) {
-                    FilesDetails folderDetails = filesDetailsMap.get(details.getParentId());
-                    folderDetails.setCover(details.getCover());
+                    Integer folderDetailsIndex = filesDetailsMap.get(details.getParentId());
+                    filesDetailsList.get(folderDetailsIndex).setCover(details.getCover());
                     filesDetailsMap.remove(details.getParentId());
-                    filesDetailsList.add(folderDetails);
                 }
                 filesDetailsList.add(details);
                 Book book = new Book();

@@ -49,7 +49,7 @@ public class FilesTagsServiceImpl extends ServiceImpl<FilesTagsMapper, FilesTags
         lambdaQueryWrapper.in(FilesTags::getFilesId, filesIds);
         boolean success = this.remove(lambdaQueryWrapper);
         if (!success) {
-            throw new BizException("4000", "删除绑定标签失败");
+            log.error("系列或书籍没有绑定标签");
         }
     }
 

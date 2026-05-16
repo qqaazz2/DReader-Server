@@ -35,7 +35,7 @@ public class FilesAuthorServiceImpl extends ServiceImpl<FilesAuthorMapper, Files
         lambdaQueryWrapper.in(FilesAuthor::getFilesId, filesIds);
         boolean success = this.remove(lambdaQueryWrapper);
         if (!success) {
-            throw new BizException("4000", "删除绑定作者失败");
+            log.error("系列或书籍作者数据不存在");
         }
     }
 

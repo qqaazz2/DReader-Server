@@ -39,7 +39,7 @@ public class CheckFileTask implements Callable<FileTaskResult> {
 
         for (Files hashSameFiles : filesList) {
             if (hashSameFiles.getInode().equals(inode)) {
-                if (hashSameFiles.getParentId() != parentID || hashSameFiles.getFilePath().equals(file.getPath()) || hashSameFiles.getFileName().equals(file.getName())) {
+                if (!hashSameFiles.getParentId().equals(parentID) || !hashSameFiles.getFilePath().equals(file.getPath()) || !hashSameFiles.getFileName().equals(file.getName())) {
                     filesType = FilesCheckType.RENAME;
                     hashSameFiles.setFileName(file.getName());
                     hashSameFiles.setFilePath(file.getPath());
@@ -49,7 +49,7 @@ public class CheckFileTask implements Callable<FileTaskResult> {
             }
         }
 
-        if(filesList.size() == 1 && filesList.get(0).getParentId().equals( parentID) && filesList.get(0).getFileSize().equals(file.length())){
+        if(filesList.size() == 1 && filesList.get(0).getParentId().equals( parentID) && filesList.get(0).getFileSize().equals(file.length()) && ((!filesList.get(0).getParentId().equals(parentID) || !filesList.get(0).getFilePath().equals(file.getPath()) || !filesList.get(0).getFileName().equals(file.getName())) )){
             filesType = FilesCheckType.RENAME;
             files = filesList.get(0);
             files.setFileName(file.getName());

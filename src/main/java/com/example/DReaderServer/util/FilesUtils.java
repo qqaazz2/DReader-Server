@@ -79,7 +79,7 @@ public class FilesUtils {
         return files;
     }
 
-    public Files createFolder(File file, Long parentId, Integer size,String customId) {
+    public Files createFolder(File file, Long parentId, Integer size) {
         try {
             Files files = new Files();
             files.setFileName(file.getName());
@@ -89,7 +89,7 @@ public class FilesUtils {
             files.setFile(file);
             files.setIsFolder(1);
             files.setInode(FileKeyAdapter.getFileKey(file));
-            files.setHash(customId);
+            files.setHash("folder");
             files.setFileSize(size.longValue());
             files.setParentId(parentId);
             return files;
@@ -108,17 +108,14 @@ public class FilesUtils {
         return false;
     }
 
-    public String createMetaFile(String path){
+    public void createMetaFile(String path,Long id){
         ObjectMapper objectMapper = new ObjectMapper();
         MetaData metaData = new MetaData();
         Path paths = Paths.get(path + File.separator + metaName);
         try {
             if(!java.nio.file.Files.exists(paths)) java.nio.file.Files.createFile(paths);
-            String timePrefix = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-            String uuid = timePrefix + "-" + UUID.randomUUID().toString();
-            metaData.setId(uuid);
+            metaData.setId(id.toString());
             objectMapper.writeValue(paths.toFile(), metaData);
-            return uuid;
         } catch (IOException e) {
             e.printStackTrace();
             throw new BizException("4000", "创建元数据文件失败");
@@ -128,7 +125,7 @@ public class FilesUtils {
 
     public MetaData checkFolderId(String path) {
         ObjectMapper objectMapper = new ObjectMapper();
-        MetaData metaData = new MetaData();
+        MetaData metaData;
         File metaFile = new File(path + File.separator + metaName);
         try {
             metaData = objectMapper.readValue(metaFile, MetaData.class);

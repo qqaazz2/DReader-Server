@@ -50,7 +50,6 @@ public abstract class AsyncTask {
     String filePath;
 
     String basePath;
-    private static final Object LOCK = new Object();
     public static ConcurrentHashMap<Class<?>, Thread> taskMap = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<Class<?>, Integer> taskNumMap = new ConcurrentHashMap<>();
 

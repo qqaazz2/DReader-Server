@@ -5,20 +5,27 @@ import com.example.DReaderServer.common.ResultResponse;
 //import com.example.DReaderServer.entity.book.Series;
 import com.example.DReaderServer.dto.files.FilesDetailsItemDTO;
 import com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition;
+import com.example.DReaderServer.dto.files.UpdateStatusRequestDTO;
 import com.example.DReaderServer.dto.files.group.SpecificCheck;
 import com.example.DReaderServer.entity.files.FilesDetails;
 import com.example.DReaderServer.service.book.SeriesService;
 import com.example.DReaderServer.service.files.FilesDetailsService;
+import com.example.DReaderServer.service.files.FilesService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/files")
 public class FilesController {
     @Resource
     FilesDetailsService filesDetailsService;
+
+    @Resource
+    FilesService filesService;
 
     @GetMapping("/getList")
     public ResultResponse getList(FilesDetailsListQueryCondition queryCondition) {
@@ -32,7 +39,7 @@ public class FilesController {
     }
 
     @GetMapping("/getRecent")
-    public ResultResponse getRecent(){
+    public ResultResponse getRecent() {
         return ResultResponse.success(filesDetailsService.getRecent());
     }
 
@@ -67,7 +74,7 @@ public class FilesController {
         return ResultResponse.success(filesDetailsService.getOverview());
     }
 
-//
+    //
 //    @GetMapping("/getIdByFilesId")
 //    public ResultResponse getIdByFilesId(@RequestParam Integer id) {
 //        return ResultResponse.success(seriesService.getIdByFilesId(id));
@@ -76,5 +83,11 @@ public class FilesController {
     @GetMapping("/randomData")
     public ResultResponse randomData() {
         return ResultResponse.success(filesDetailsService.randomData());
+    }
+
+    @PostMapping("/updateStatusByField")
+    public ResultResponse updateStatusByField(@RequestBody UpdateStatusRequestDTO updateStatusRequestDTO) {
+        filesDetailsService.updateStatusByField(updateStatusRequestDTO);
+        return ResultResponse.success();
     }
 }

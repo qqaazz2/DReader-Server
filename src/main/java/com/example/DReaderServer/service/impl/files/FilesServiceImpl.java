@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.DReaderServer.common.BizException;
 import com.example.DReaderServer.dto.setting.ProportionDTO;
 import com.example.DReaderServer.dto.setting.TimeCountDTO;
+import com.example.DReaderServer.entity.MetaData;
 import com.example.DReaderServer.entity.files.Files;
 import com.example.DReaderServer.entity.files.FilesAuthor;
 import com.example.DReaderServer.mapper.files.FilesAuthorMapper;
@@ -17,14 +18,20 @@ import com.example.DReaderServer.service.files.FilesAuthorService;
 import com.example.DReaderServer.service.files.FilesDetailsService;
 import com.example.DReaderServer.service.files.FilesService;
 import com.example.DReaderServer.service.files.FilesTagsService;
+import com.example.DReaderServer.util.FilesUtils;
 import com.example.DReaderServer.util.ValidationUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -48,6 +55,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
 
     @Resource
     FilesTagsService filesTagsService;
+
 
     @Override
     public List<Files> getFilesList() {
@@ -126,7 +134,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
         Files files = this.getOne(queryWrapper);
 
         Map<String, Object> map = new HashMap<>();
-        if(files.getFileSize() == null){
+        if (files.getFileSize() == null) {
             map.put("count", files.getCount());
             map.put("size", 0);
             return map;

@@ -159,7 +159,7 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
         List<Integer> statuses = filesDetailsMapper.getStatusByParentId(filesId);
         if (statuses.isEmpty()) throw new BizException("4000", "未查询到该系列下的子文件");
         int status;
-        long countUnread = statuses.stream().filter(s -> s == 1).count(); // 连载
+        long countUnread = statuses.stream().filter(s -> s == 1).count();
         long countOver = statuses.stream().filter(s -> s == 2).count();
         if (countUnread == statuses.size()) {
             status = 1;
@@ -247,15 +247,25 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     }
 
     @Override
+    public void updateStatusByField(UpdateStatusRequestDTO updateStatusRequestDTO) {
+        if (!List.of("status", "love", "overStatus").contains(updateStatusRequestDTO.getField())) throw new BizException("更新状态失败，非法字段");
+        UpdateWrapper<FilesDetails> updateWrapper = new UpdateWrapper<FilesDetails>();
+        updateWrapper.set(updateStatusRequestDTO.getField(), updateStatusRequestDTO.getStatus());
+        System.out.println(updateStatusRequestDTO.getIds());
+        updateWrapper.in("id", updateStatusRequestDTO.getIds());
+        if (!this.update(updateWrapper)) throw new BizException("4000", "更新状态失败");
+    }
+
+    @Override
     public FilesDetailsListDTO randomData() {
         List<FilesCoverChangeDTO> list = filesDetailsMapper.randomValidFiles();
-        if(list.isEmpty())throw new BizException("4000", "当前系统中的所有系列均已阅读完成，暂无未读内容");
+        if (list.isEmpty()) throw new BizException("4000", "当前系统中的所有系列均已阅读完成，暂无未读内容");
         Random random = new Random();
         int index = random.nextInt(list.size());
 
         FilesCoverChangeDTO filesCoverChangeDTO = list.get(index);
         FilesDetailsListDTO filesDetailsListDTO = filesDetailsMapper.randomData(filesCoverChangeDTO.getFilesId());
-        if(filesDetailsListDTO == null)throw new BizException("4000", "随机系列获取失败，请稍后再试。");
+        if (filesDetailsListDTO == null) throw new BizException("4000", "随机系列获取失败，请稍后再试。");
         return filesDetailsListDTO;
     }
 }

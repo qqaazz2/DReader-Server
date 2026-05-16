@@ -43,6 +43,11 @@ public class ScanningSseClient {
     @Async
     public void sendMessage() {
         try {
+            sseEmitter.send(SseEmitter.event()
+                    .id("task-running")
+                    .name("status")
+                    .data("队列任务执行中，请稍候..."));
+            Thread.sleep(5000);
             while (AsyncTask.taskMap.size() > 0) {
                 sseEmitter.send(SseEmitter.event()
                         .id("task-running")
