@@ -2,8 +2,8 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.DReaderServer.mapper.book.BookMapper">
-    <resultMap id="bookList" type="com.example.DReaderServer.dto.book.BookListDTO">
+<mapper namespace="io.github.qqaazz2.DReaderServer.mapper.book.BookMapper">
+    <resultMap id="bookList" type="io.github.qqaazz2.DReaderServer.dto.book.BookListDTO">
         <id column="id" property="id"/>
         <result column="files_id" property="filesId"/>
         <result column="file_path" property="filePath"/>
@@ -19,13 +19,13 @@
         <result column="read_tag_num" property="readTagNum"/>
     </resultMap>
 
-    <resultMap id="bookCover" type="com.example.DReaderServer.dto.book.BookCoverDTO">
+    <resultMap id="bookCover" type="io.github.qqaazz2.DReaderServer.dto.book.BookCoverDTO">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
         <result column="cover" property="cover"/>
     </resultMap>
 
-    <resultMap id="bookFileCover" type="com.example.DReaderServer.entity.book.BookFileCover">
+    <resultMap id="bookFileCover" type="io.github.qqaazz2.DReaderServer.entity.book.BookFileCover">
         <id column="id" property="id"/>
         <result column="cover" property="cover"/>
         <result column="hash" property="hash"/>
@@ -34,7 +34,7 @@
     </resultMap>
 
     <select id="getList" resultMap="bookList"
-            parameterType="com.example.DReaderServer.dto.book.BookListQueryCondition">
+            parameterType="io.github.qqaazz2.DReaderServer.dto.book.BookListQueryCondition">
         SELECT
         book.id,
         book.files_id,
@@ -66,7 +66,7 @@
         ORDER BY files_details.`name`,
         LIMIT #{offset},#{limit}
     </select>
-    <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.book.BookListQueryCondition">
+    <select id="count" resultType="int" parameterType="io.github.qqaazz2.DReaderServer.dto.book.BookListQueryCondition">
         SELECT count(*) FROM book
         LEFT JOIN files ON book.files_id = files.id
         WHERE files.deleted = 1

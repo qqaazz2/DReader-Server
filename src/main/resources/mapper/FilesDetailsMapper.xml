@@ -2,8 +2,8 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.DReaderServer.mapper.files.FilesDetailsMapper">
-    <resultMap id="fileDetailsList" type="com.example.DReaderServer.dto.files.FilesDetailsListDTO">
+<mapper namespace="io.github.qqaazz2.DReaderServer.mapper.files.FilesDetailsMapper">
+    <resultMap id="fileDetailsList" type="io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListDTO">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
         <result column="over_status" property="overStatus"/>
@@ -16,7 +16,7 @@
         <result column="file_path" property="filePath"/>
     </resultMap>
 
-    <resultMap id="filesCoverList" type="com.example.DReaderServer.dto.files.FilesCoverChangeDTO">
+    <resultMap id="filesCoverList" type="io.github.qqaazz2.DReaderServer.dto.files.FilesCoverChangeDTO">
         <id column="id" property="id"/>
         <result column="files_id" property="filesId"/>
         <result column="is_folder" property="isFolder"/>
@@ -26,14 +26,14 @@
         <result column="sort" property="sort"/>
     </resultMap>
 
-    <resultMap id="fileOverviewList" type="com.example.DReaderServer.dto.files.FilesOverviewListDTO">
+    <resultMap id="fileOverviewList" type="io.github.qqaazz2.DReaderServer.dto.files.FilesOverviewListDTO">
         <result column="over_status" property="overStatus"/>
         <result column="status" property="status"/>
         <result column="love" property="love"/>
         <result column="is_folder" property="isFolder"/>
     </resultMap>
 
-    <resultMap id="fileDetailsItem" type="com.example.DReaderServer.dto.files.FilesDetailsItemDTO">
+    <resultMap id="fileDetailsItem" type="io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsItemDTO">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
         <result column="cover" property="cover"/>
@@ -51,7 +51,7 @@
         <result column="parent_id" property="parentId"/>
     </resultMap>
 
-    <select id="getList" resultMap="fileDetailsList" parameterType="com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition">
+    <select id="getList" resultMap="fileDetailsList" parameterType="io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListQueryCondition">
         SELECT
             files_details.id,
             files_details.over_status,
@@ -107,7 +107,7 @@
         </if>
         LIMIT #{offset},#{limit}
     </select>
-    <select id="count" resultType="int" parameterType="com.example.DReaderServer.dto.files.FilesDetailsListQueryCondition">
+    <select id="count" resultType="int" parameterType="io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListQueryCondition">
         SELECT count(*) FROM files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
         <if test="authorId != null and authorId != ''">

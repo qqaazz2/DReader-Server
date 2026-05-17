@@ -29,7 +29,7 @@
         <appender-ref ref="CONSOLE"/>
     </logger>
 
-    <logger name="com.example.DReaderServer" level="INFO" additivity="false">
+    <logger name="io.github.qqaazz2.DReaderServer" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="DB"/>
     </logger>

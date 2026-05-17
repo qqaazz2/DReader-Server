@@ -2,8 +2,8 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.DReaderServer.mapper.files.FilesTagsMapper">
-    <resultMap id="fileDetailsTag" type="com.example.DReaderServer.dto.files.FilesDetailsItemDTO$FilesDetailsTag">
+<mapper namespace="io.github.qqaazz2.DReaderServer.mapper.files.FilesTagsMapper">
+    <resultMap id="fileDetailsTag" type="io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsItemDTO$FilesDetailsTag">
         <id column="id" property="id"/>
         <result column="tag_id" property="tagId"/>
         <result column="name" property="name"/>
