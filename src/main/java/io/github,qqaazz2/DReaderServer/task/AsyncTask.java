@@ -34,10 +34,11 @@ public abstract class AsyncTask {
     String filePath;
 
     String basePath;
+
     public static ConcurrentHashMap<Class<?>, Thread> taskMap = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<Class<?>, Integer> taskNumMap = new ConcurrentHashMap<>();
 
-    public void startOrRestart(String path) {
+    public void startOrRestart(String path, boolean isScrape) {
         Class<?> taskClass = this.getClass();
         Thread currentThread = Thread.currentThread();
         String taskName = Thread.currentThread().getName() + "-" + taskClass.getSimpleName();
@@ -57,7 +58,7 @@ public abstract class AsyncTask {
         }
 
         try {
-            start(path);
+            start(path, isScrape);
         } catch (TaskInterruptedException e) {
             log.info("[{}]任务被中断", taskName);
             throw e;
@@ -69,7 +70,7 @@ public abstract class AsyncTask {
         }
     }
 
-    protected void start(String path) {
+    protected void start(String path, boolean isScrape) {
         try {
             List<Files> filesList = filesService.getFilesList();
             ScanContext scanContext = new ScanContext(filePath + (((path.equals("") || path.isEmpty()) ? basePath : path)), filesList);
@@ -82,6 +83,7 @@ public abstract class AsyncTask {
             checkInterrupted();
             remove(scanContext.getRemoveFiles());
             log.info("扫描完成");
+            if (!isScrape) return;
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                     @Override

@@ -80,7 +80,7 @@ public class CoverTask extends io.github.qqaazz2.DReaderServer.task.BaseTask {
             filesDetails.setCover(item.getCover());
             return filesDetails;
         }).collect(Collectors.toList());
-        filesDetailsService.updateFolderCover(folders);
+        if(folders.size() > 0)filesDetailsService.updateFolderCover(folders);
         if (check(currentGeneration)) return;
         filesSet.removeAll(removeSet);
         fileAdapterService.removeByList(filesSet);

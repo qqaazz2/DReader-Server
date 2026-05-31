@@ -311,8 +311,7 @@ public class ScrapeTask extends io.github.qqaazz2.DReaderServer.task.BaseTask {
                 authorMap.put(bgmPersonsDTO.getName(), author.getId());
                 id = author.getId();
             }
-            if (authorFilesMap.containsKey(filesDetails.getFilesId()) && authorFilesMap.get(filesDetails.getFilesId()).contains(id))
-                return;
+            if (authorFilesMap.containsKey(filesDetails.getFilesId()) && authorFilesMap.get(filesDetails.getFilesId()).contains(id)) return;
             ids.add(id);
             filesAuthor.setAuthorId(id);
             filesAuthorsList.add(filesAuthor);

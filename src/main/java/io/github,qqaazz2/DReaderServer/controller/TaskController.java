@@ -19,8 +19,8 @@ public class TaskController {
     CoverTask coverTask;
 
     @GetMapping("scanning")
-    public ResultResponse scanning(@RequestParam(defaultValue = "", required = false) String path) {
-        bookTask.startOrRestart(path);
+    public ResultResponse scanning(@RequestParam(defaultValue = "", required = false) String path, @RequestParam(defaultValue = "true", required = false) boolean isScrape) {
+        bookTask.startOrRestart(path,isScrape);
         return ResultResponse.success();
     }
 
