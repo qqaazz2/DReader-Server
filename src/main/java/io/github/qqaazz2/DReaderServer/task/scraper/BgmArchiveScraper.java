@@ -101,7 +101,7 @@ public class BgmArchiveScraper extends BaseScraper {
                     init = true;
                     return;
                 }
-                Path jsonPath = Path.of(filePath + "/json/");
+                Path jsonPath = Path.of(filePath + "/json");
                 if (!Files.exists(jsonPath)) {
                     Files.createDirectories(jsonPath);
                 }
@@ -114,7 +114,15 @@ public class BgmArchiveScraper extends BaseScraper {
 
                 unzip(downloadPath);
                 handleSubjectData();
-                Files.deleteIfExists(jsonPath);
+                Files.walk(jsonPath)
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 changeArchiveId(response.id);
                 init = true;
             } catch (Exception exception) {
@@ -164,7 +172,7 @@ public class BgmArchiveScraper extends BaseScraper {
                         bgmSubjectDataQueue.offer(subjectData);
                     }
 
-                    if (file.getName().equals("persons.jsonlines")) {
+                    if (file.getName().equals("person.jsonlines")) {
                         personData = objectMapper.readValue(line, ScraperPerson.class);
                         personDataMap.put(personData.getId(), personData);
                     }
@@ -180,7 +188,7 @@ public class BgmArchiveScraper extends BaseScraper {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e.getMessage());
+                throw new RuntimeException(e.getMessage() + e.getStackTrace());
             }
         }
 
@@ -214,6 +222,7 @@ public class BgmArchiveScraper extends BaseScraper {
 
     private boolean check(String id) {
        User user = userMapper.selectById(1);
+       if(user.getArchiveId() == null) return false;
        return user.getArchiveId().equals(id);
     }
 
