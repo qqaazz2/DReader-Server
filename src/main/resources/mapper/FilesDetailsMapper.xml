@@ -178,9 +178,9 @@
         FROM
         files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
-        WHERE files_details.deleted = 1 AND files_details.`status` in (2,3)
+        WHERE files_details.deleted = 1 AND files_details.`status` in (2,3) AND is_folder = 2
         ORDER BY `last_read_time` DESC
-        LIMIT 1
+        LIMIT 30
     </select>
 
     <select id="getStatusByParentId" resultType="int" parameterType="long">
