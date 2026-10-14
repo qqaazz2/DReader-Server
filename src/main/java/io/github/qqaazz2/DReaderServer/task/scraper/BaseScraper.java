@@ -16,6 +16,7 @@ import io.github.qqaazz2.DReaderServer.enums.ExceptionEnum;
 import io.github.qqaazz2.DReaderServer.mapper.AuthorMapper;
 import io.github.qqaazz2.DReaderServer.mapper.TagsMapper;
 import io.github.qqaazz2.DReaderServer.mapper.files.FilesAuthorMapper;
+import io.github.qqaazz2.DReaderServer.mapper.files.FilesDetailsMapper;
 import io.github.qqaazz2.DReaderServer.mapper.files.FilesMapper;
 import io.github.qqaazz2.DReaderServer.mapper.files.FilesTagsMapper;
 import io.github.qqaazz2.DReaderServer.service.AuthorService;
@@ -59,10 +60,7 @@ public abstract class BaseScraper extends BaseTask {
     FilesTagsMapper filesTagsMapper;
 
     @Resource
-    ObjectMapper objectMapper;
-
-    @Resource
-    FilesDetailsService filesDetailsService;
+    FilesDetailsMapper filesDetailsMapper;
 
     @Resource
     FilesAuthorService filesAuthorService;
@@ -75,7 +73,7 @@ public abstract class BaseScraper extends BaseTask {
 
     @Resource
     AuthorService authorService;
-
+    protected static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String TAG_FILES = "scrape:tag_files";
     private static final String AUTHOR_FILES = "scrape:author_files";
     private static final String TAGS = "scrape:tags";
@@ -92,163 +90,104 @@ public abstract class BaseScraper extends BaseTask {
     private boolean init = false;
 
     public void start(long currentGeneration) {
-//        fileAdapterService = factory.getFileAdapter();
-        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-        List<Integer> saveNotFindDataList = new ArrayList<>();
-        List<FilesTags> tagsId = new ArrayList<>();
-        Map<String, List<Long>> missingTags = new HashMap<>();
-        List<FilesAuthor> authorsId = new ArrayList<>();
-        Map<ScraperPerson, List<Long>> missingAuthors = new HashMap<>();
-        MatchData matchData;
-        while (true) {
-            if (currentGeneration != activeGeneration.get() || !running.get()) {
-                log.info("发现新的刮削任务启动，结束当前的任务");
-                return;
-            }
-            FilesDetails filesDetails = (FilesDetails) redisTemplate.opsForList().leftPop("scrape_queue");
-            if (filesDetails == null) {
-                log.info("刮削队列为空，刮削任务结束");
-                break;
-            }
-            if (!init) init();
-            try {
-                if(filesDetails.getIsFolder() != 1) continue;
-                matchData = match(filesDetails);
-                if (matchData.getType()) {
-                    filesDetails.setProfile(matchData.getScraperSubject().getSummary());
-                    filesDetails.setBgmId(matchData.getScraperSubject().getId());
-                    filesDetails.setDate(matchData.getScraperSubject().getDate());
-                    filesDetails.setScraper(1);
-                    filesDetailsService.updateData(filesDetails);
-
-                    Long filesId = filesDetails.getFilesId();
-                    List<Integer> fileTagIds = (List<Integer>) redisTemplate.opsForHash().get(TAG_FILES, filesId);
-                    if (fileTagIds == null) fileTagIds = new ArrayList<>();
-                    List<String> tagNames = matchData.getScraperSubject().getTags().stream().map(item -> item.getName()).toList();
-                    List<Object> values = redisTemplate.opsForHash().multiGet(TAGS, new ArrayList<>(tagNames));
-                    for (int i = 0; i < tagNames.size(); i++) {
-                        Object value = values.get(i);
-                        if (value == null) {
-                            List<Long> list = missingTags.get(tagNames.get(i));
-                            if (list == null) list = new ArrayList<>();
-                            list.add(filesId);
-                            missingTags.put(tagNames.get(i), list);
-                            continue;
-                        }
-
-                        Integer tagId = Integer.parseInt(value.toString());
-                        if (fileTagIds.contains(tagId)) continue;
-                        FilesTags filesTags = new FilesTags();
-                        filesTags.setTagsId(tagId);
-                        filesTags.setFilesId(filesId);
-                        tagsId.add(filesTags);
-                    }
-
-                    List<Integer> fileAuthorIds = (List<Integer>) redisTemplate.opsForHash().get(AUTHOR_FILES, filesId);
-                    if (fileAuthorIds == null) fileAuthorIds = new ArrayList<>();
-                    List<ScraperPerson> persons = matchData.getScraperSubject().getPersons();
-                    List<Object> authorValues = redisTemplate.opsForHash().multiGet(AUTHORS,persons.stream().map(ScraperPerson::getName).toList());
-                    for (int i = 0; i < persons.size(); i++) {
-                        ScraperPerson person = persons.get(i);
-                        Object value = authorValues.get(i);
-                        if (value == null) {
-                            missingAuthors.computeIfAbsent(person, key -> new ArrayList<>()).add(filesId);
-                            continue;
-                        }
-
-                        Integer authorId = Integer.parseInt(value.toString());
-                        if (fileAuthorIds.contains(authorId)) continue;
-
-                        FilesAuthor filesAuthor = new FilesAuthor();
-                        filesAuthor.setAuthorId(authorId);
-                        filesAuthor.setFilesId(filesId);
-
-                        authorsId.add(filesAuthor);
-                    }
-
-                    if (tagsId.size() >= 1000 || authorsId.size() >= 1000) {
-                        if (!missingTags.isEmpty()) {
-                            List<Tags> tagsList = tagsService.createTags(
-                                    missingTags.keySet().stream()
-                                            .map(name -> {
-                                                Tags tags = new Tags();
-                                                tags.setName(name);
-                                                return tags;
-                                            }).toList()
-                            );
-
-                            for (Tags tags : tagsList) {
-                                List<Long> fileIds = missingTags.get(tags.getName());
-                                for (Long id : fileIds) {
-                                    FilesTags filesTags = new FilesTags();
-                                    filesTags.setFilesId(id);
-                                    filesTags.setTagsId(tags.getId());
-                                    tagsId.add(filesTags);
-                                }
-                            }
-                            missingTags.clear();
-                        }
-
-                        if (!missingAuthors.isEmpty()) {
-                            List<Author> authorsList = authorService.createAuthors(
-                                    missingAuthors.keySet()
-                                            .stream()
-                                            .map(item -> {
-                                                Author author = new Author();
-                                                author.setName(item.getName());
-                                                author.setBgmId(item.getId());
-                                                author.setProfile(item.getSummary());
-                                                StringBuilder careers = new StringBuilder();
-                                                for (String career:item.getCareer()) {
-                                                    careers.append(CAREER.get(career));
-                                                }
-                                                author.setAvatar(getAuthorAvatarPath(author.getId()));
-                                                try {
-                                                    log.info("请求获取制作人员图片，休息5秒");
-                                                    Thread.sleep(5000);
-                                                } catch (InterruptedException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                author.setVocational(careers.toString());
-                                                return author;
-                                            })
-                                            .toList()
-                            );
-
-                            for (Author author : authorsList) {
-                                List<Long> fileIds = missingAuthors.get(author.getName());
-                                for (Long id : fileIds) {
-                                    FilesAuthor filesAuthor = new FilesAuthor();
-                                    filesAuthor.setFilesId(id);
-                                    filesAuthor.setAuthorId(author.getId());
-                                    authorsId.add(filesAuthor);
-                                }
-                            }
-
-                            missingAuthors.clear();
-                        }
-
-                        if (!tagsId.isEmpty()) {
-                            filesTagsService.createList(tagsId);
-                            tagsId.clear();
-                        }
-
-                        if (!authorsId.isEmpty()) {
-                            filesAuthorService.createList(authorsId);
-                            authorsId.clear();
-                        }
-                    }
-                } else {
-                    filesDetails.setScraper(2);
-                    filesDetailsService.updateData(filesDetails);
+        try {
+            objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+            List<FilesTags> tagsId = new ArrayList<>();
+            Map<String, List<Long>> missingTags = new HashMap<>();
+            List<FilesAuthor> authorsId = new ArrayList<>();
+            Map<String, ScraperPerson> missingAuthors = new HashMap<>();
+            Map<String,List<Long>> missingAuthorsByFilesIds = new HashMap<>();
+            MatchData matchData;
+            while (true) {
+                if (currentGeneration != activeGeneration.get() || !running.get()) {
+                    log.info("发现新的刮削任务启动，结束当前的任务");
+                    return;
                 }
-                System.out.println("我要睡觉了，我要睡5秒");
-                Thread.sleep(5000);
-                System.out.println("睡了5秒我起床了");
-            } catch (Exception exception) {
-                log.error(exception.getMessage());
-                redisTemplate.opsForList().rightPush("scrape_queue_fail", filesDetails);
+                FilesDetails filesDetails = (FilesDetails) redisTemplate.opsForList().leftPop("scrape_queue");
+                if (filesDetails == null) {
+                    log.info("刮削队列为空，刮削任务结束");
+                    break;
+                }
+                if (!init) init();
+                try {
+                    if (filesDetails.getIsFolder() != 1) continue;
+                    matchData = match(filesDetails);
+                    if (matchData.getType()) {
+                        ScraperSubject scraperSubject = matchData.getScraperSubject();
+                        filesDetails.setProfile(scraperSubject.getSummary());
+                        filesDetails.setBgmId(scraperSubject.getId());
+                        filesDetails.setDate(scraperSubject.getDate());
+                        filesDetails.setScraper(1);
+                        if(scraperSubject.getNameCn() != null){
+                            filesDetails.setOriginalName(scraperSubject.getName());
+                        }
+                        filesDetailsMapper.updateById(filesDetails);
+
+                        Long filesId = filesDetails.getFilesId();
+                        List<Integer> fileTagIds = (List<Integer>) redisTemplate.opsForHash().get(TAG_FILES, filesId);
+                        if (fileTagIds == null) fileTagIds = new ArrayList<>();
+                        List<String> tagNames = matchData.getScraperSubject().getTags().stream().map(item -> item.getName()).toList();
+                        List<Object> values = redisTemplate.opsForHash().multiGet(TAGS, new ArrayList<>(tagNames));
+                        for (int i = 0; i < tagNames.size(); i++) {
+                            Object value = values.get(i);
+                            if (value == null) {
+                                List<Long> list = missingTags.get(tagNames.get(i));
+                                if (list == null) list = new ArrayList<>();
+                                list.add(filesId);
+                                missingTags.put(tagNames.get(i), list);
+                                continue;
+                            }
+
+                            Integer tagId = Integer.parseInt(value.toString());
+                            if (fileTagIds.contains(tagId)) continue;
+                            FilesTags filesTags = new FilesTags();
+                            filesTags.setTagsId(tagId);
+                            filesTags.setFilesId(filesId);
+                            tagsId.add(filesTags);
+                        }
+
+                        List<Integer> fileAuthorIds = (List<Integer>) redisTemplate.opsForHash().get(AUTHOR_FILES, filesId);
+                        if (fileAuthorIds == null) fileAuthorIds = new ArrayList<>();
+                        List<ScraperPerson> persons = matchData.getScraperSubject().getPersons();
+                        List<Object> authorValues = redisTemplate.opsForHash().multiGet(AUTHORS, persons.stream().map(ScraperPerson::getName).toList());
+                        for (int i = 0; i < persons.size(); i++) {
+                            ScraperPerson person = persons.get(i);
+                            Object value = authorValues.get(i);
+                            if (value == null) {
+                                if(!missingAuthors.containsKey(persons.get(i).getName())) missingAuthors.put(persons.get(i).getName(), persons.get(i));
+                                List<Long> list = missingAuthorsByFilesIds.get(persons.get(i).getName());
+                                if (list == null) list = new ArrayList<>();
+                                list.add(filesId);
+                                missingAuthorsByFilesIds.put(persons.get(i).getName(), list);
+                                continue;
+                            }
+
+                            Integer authorId = Integer.parseInt(value.toString());
+                            if (fileAuthorIds.contains(authorId)) continue;
+
+                            FilesAuthor filesAuthor = new FilesAuthor();
+                            filesAuthor.setAuthorId(authorId);
+                            filesAuthor.setFilesId(filesId);
+
+                            authorsId.add(filesAuthor);
+                        }
+
+                        if (tagsId.size() >= 1000 || authorsId.size() >= 1000) bindTagsAndPerson(missingTags,missingAuthors,missingAuthorsByFilesIds,authorsId,tagsId);
+                    } else {
+                        filesDetails.setScraper(2);
+                        filesDetailsMapper.updateById(filesDetails);
+                    }
+                    System.out.println("我要睡觉了，我要睡5秒");
+                    Thread.sleep(5000);
+                    System.out.println("睡了5秒我起床了");
+                } catch (Exception exception) {
+                    log.error(exception.getMessage());
+                    redisTemplate.opsForList().rightPush("scrape_queue_fail", filesDetails);
+                }
             }
+            bindTagsAndPerson(missingTags,missingAuthors,missingAuthorsByFilesIds,authorsId,tagsId);
+        }catch (Exception exception){
+            log.error(exception.getMessage());
         }
     }
 
@@ -260,15 +199,29 @@ public abstract class BaseScraper extends BaseTask {
 
     public abstract List<ScraperSubject> getOriginalDataList(String name);
 
+    public abstract ScraperSubject getOriginalDataByUserSelectMatchId(Integer id);
+
     @Override
     public void close() {
-
     }
 
     public MatchData match(FilesDetails filesDetails) {
         MatchData matchData = new MatchData();
         matchData.setId(filesDetails.getId());
         String localName = fullNormalize(filesDetails.getName());
+
+        if (filesDetails.getUserSelectMatchId() != null && filesDetails.getUserSelectMatchId() != -1) {
+            ScraperSubject scraperSubject = getOriginalDataByUserSelectMatchId(filesDetails.getUserSelectMatchId());
+            if (scraperSubject != null) {
+                ScoreData scoreData = new ScoreData();
+                scoreData.setData(scraperSubject);
+                scoreData.setScore(1);
+                matchData.setType(true);
+                matchData.setScraperSubject(scoreData.getData());
+                return matchData;
+            }
+        }
+
         String localOriginalName = fullNormalize(filesDetails.getOriginalName());
         List<ScraperSubject> originalDataList = getOriginalDataList(filesDetails.getName());
         List<ScoreData> scoreList = new ArrayList<>();
@@ -451,6 +404,81 @@ public abstract class BaseScraper extends BaseTask {
     public abstract String getName();
 
     public abstract String getAuthorAvatarPath(Integer authorId);
+
+    private void bindTagsAndPerson(Map<String, List<Long>> missingTags, Map<String,ScraperPerson> missingAuthors, Map<String,List<Long>> missingAuthorsByFileIds,List<FilesAuthor> authorsId, List<FilesTags> tagsId) {
+        if (!missingTags.isEmpty()) {
+            List<Tags> tagsList = tagsService.createTags(
+                    missingTags.keySet().stream()
+                            .map(name -> {
+                                Tags tags = new Tags();
+                                tags.setName(name);
+                                return tags;
+                            }).toList()
+            );
+
+            for (Tags tags : tagsList) {
+                List<Long> fileIds = missingTags.get(tags.getName());
+                for (Long id : fileIds) {
+                    FilesTags filesTags = new FilesTags();
+                    filesTags.setFilesId(id);
+                    filesTags.setTagsId(tags.getId());
+                    tagsId.add(filesTags);
+                }
+            }
+            missingTags.clear();
+        }
+
+        if (!missingAuthors.isEmpty()) {
+            List<Author> authorsList = authorService.createAuthors(
+                    missingAuthors.values()
+                            .stream()
+                            .map(item -> {
+                                Author author = new Author();
+                                author.setName(item.getName());
+                                author.setBgmId(item.getId());
+                                author.setProfile(item.getSummary());
+                                StringBuilder careers = new StringBuilder();
+                                for (String career : item.getCareer()) {
+                                    careers.append(CAREER.get(career));
+                                }
+                                author.setAvatar(getAuthorAvatarPath(author.getBgmId()));
+                                try {
+                                    log.info("请求获取制作人员图片，休息5秒");
+                                    Thread.sleep(5000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                author.setVocational(careers.toString());
+                                return author;
+                            })
+                            .toList()
+            );
+
+
+
+            for (Author author : authorsList) {
+                List<Long> fileIds = missingAuthorsByFileIds.get(author.getName());
+                for (Long id : fileIds) {
+                    FilesAuthor filesAuthor = new FilesAuthor();
+                    filesAuthor.setFilesId(id);
+                    filesAuthor.setAuthorId(author.getId());
+                    authorsId.add(filesAuthor);
+                }
+            }
+
+            missingAuthors.clear();
+        }
+
+        if (!tagsId.isEmpty()) {
+            filesTagsService.createList(tagsId);
+            tagsId.clear();
+        }
+
+        if (!authorsId.isEmpty()) {
+            filesAuthorService.createList(authorsId);
+            authorsId.clear();
+        }
+    }
 }
 
 @Data

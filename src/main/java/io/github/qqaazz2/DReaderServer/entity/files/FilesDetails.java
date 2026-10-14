@@ -42,4 +42,7 @@ public class FilesDetails implements Serializable {
     Long parentId;
     @TableField(exist = false)
     Integer isFolder;
+
+    @TableField(exist = false)
+    Integer userSelectMatchId;
 }

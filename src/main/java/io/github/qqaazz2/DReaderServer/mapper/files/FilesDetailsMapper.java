@@ -6,10 +6,13 @@ import io.github.qqaazz2.DReaderServer.entity.files.FilesDetails;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Set;
 
 @Mapper
 public interface FilesDetailsMapper extends BaseMapper<FilesDetails> {
     List<FilesDetailsListDTO> getList(FilesDetailsListQueryCondition queryCondition);
+
+    List<FilesDetails> getListByIds(Set<Integer> list);
 
     Integer count(FilesDetailsListQueryCondition queryCondition);
 

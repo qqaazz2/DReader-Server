@@ -1,22 +1,15 @@
-package io.github.qqaazz2.DReaderServer.mapper.bgm;
+package io.github.qqaazz2.DReaderServer.mapper.scraper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.qqaazz2.DReaderServer.entity.scraper.ScraperSubject;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
 @Mapper
 public interface ScraperSubjectMapper extends BaseMapper<ScraperSubject> {
-    @Select("""
-    SELECT *
-    FROM bgm_subject
-    WHERE MATCH(name, name_cn, alias)
-    AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
-    """)
     List<ScraperSubject> search(@Param("keyword") String keyword);
 
     @Update("""

@@ -1,11 +1,9 @@
 package io.github.qqaazz2.DReaderServer.task.scraper;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import io.github.qqaazz2.DReaderServer.common.BizException;
 import io.github.qqaazz2.DReaderServer.entity.LoginUser;
 import io.github.qqaazz2.DReaderServer.entity.User;
@@ -13,9 +11,8 @@ import io.github.qqaazz2.DReaderServer.entity.scraper.ScraperPerson;
 import io.github.qqaazz2.DReaderServer.entity.scraper.ScraperSubject;
 import io.github.qqaazz2.DReaderServer.enums.ExceptionEnum;
 import io.github.qqaazz2.DReaderServer.mapper.UserMapper;
-import io.github.qqaazz2.DReaderServer.mapper.bgm.ScraperSubjectMapper;
+import io.github.qqaazz2.DReaderServer.mapper.scraper.ScraperSubjectMapper;
 import io.github.qqaazz2.DReaderServer.service.TokenService;
-import io.github.qqaazz2.DReaderServer.service.UserService;
 import io.github.qqaazz2.DReaderServer.service.scraper.ScraperSubjectService;
 import io.github.qqaazz2.DReaderServer.storage.FileAdapterFactory;
 import io.github.qqaazz2.DReaderServer.storage.FileAdapterService;
@@ -76,6 +73,12 @@ public class BgmArchiveScraper extends BaseScraper {
     public List<ScraperSubject> getOriginalDataList(String name) {
         getArchiveZip();
         return bgmSubjectMapper.search(name);
+    }
+
+    @Override
+    public ScraperSubject getOriginalDataByUserSelectMatchId(Integer id) {
+        getArchiveZip();
+        return bgmSubjectMapper.selectById(id);
     }
 
     private void getArchiveZip() {
@@ -266,13 +269,16 @@ public class BgmArchiveScraper extends BaseScraper {
 }
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 class ArchiveAUXResponse {
     @JsonProperty("browser_download_url")
     String browserDownloadUrl;
+    @JsonProperty("id")
     String id;
 }
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 class SubjectPerson {
     @JsonProperty("person_id")
     Integer personId;

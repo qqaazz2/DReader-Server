@@ -247,4 +247,26 @@
         WHERE files_details.deleted = 1 AND files_details.files_id = #{id}
         LIMIT 1
     </select>
+
+    <select id="getListByIds" resultType="io.github.qqaazz2.DReaderServer.entity.files.FilesDetails">
+        SELECT
+        files_details.id,
+        files_details.over_status,
+        files_details.`status`,
+        files_details.love,
+        `name`,
+        files_details.cover,
+        files_details.files_id,
+        files.is_folder,
+        parent_id,
+        file_path
+        FROM
+        files_details
+        INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
+        WHERE files_details.deleted = 1 AND is_folder = 1
+        AND files_details.id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
 </mapper>

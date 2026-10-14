@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.qqaazz2.DReaderServer.mapper.scraper.ScraperSubjectMapper">
+    <resultMap id="scraperSubjectResultMap"
+               type="io.github.qqaazz2.DReaderServer.entity.scraper.ScraperSubject">
+
+        <id property="id" column="id"/>
+
+        <result property="name" column="name"/>
+        <result property="nameCn" column="name_cn"/>
+        <result property="alias" column="alias"/>
+        <result property="type" column="type"/>
+        <result property="summary" column="summary"/>
+        <result property="date" column="date"/>
+
+        <result property="persons"
+                column="persons"
+                typeHandler="io.github.qqaazz2.DReaderServer.handle.ScraperPersonListHandler"/>
+
+        <result property="tags"
+                column="tags"
+                typeHandler="io.github.qqaazz2.DReaderServer.handle.ScraperTagListHandler"/>
+
+    </resultMap>
+
+    <select id="search" resultMap="scraperSubjectResultMap">
+        SELECT *
+        FROM bgm_subject
+        WHERE MATCH(name,name_cn,alias)
+        AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
+    </select>
+</mapper>

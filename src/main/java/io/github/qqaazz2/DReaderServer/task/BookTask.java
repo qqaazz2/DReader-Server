@@ -66,7 +66,6 @@ public class BookTask extends io.github.qqaazz2.DReaderServer.task.AsyncTask {
                 checkInterrupted(() -> executor.shutdown());
                 Future<FilesDetails> future = executor.submit(new GetBookCoverTask(files, filesUtils, fileAdapterService));
                 futureList.add(future);
-                folderCount++;
             } else {
                 FilesDetails filesDetails = new FilesDetails();
                 filesDetails.setFilesId(files.getId());
@@ -74,6 +73,7 @@ public class BookTask extends io.github.qqaazz2.DReaderServer.task.AsyncTask {
                 filesDetails.setIsFolder(1);
                 filesDetailsList.add(filesDetails);
                 filesDetailsMap.put(files.getId(), filesDetailsList.size() == 0 ? 0 : filesDetailsList.size() - 1);
+                folderCount++;
             }
         }
         executor.shutdown();

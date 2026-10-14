@@ -15,6 +15,9 @@ public interface FilesDetailsService {
 
     FilesDetails updateData(FilesDetails filesDetails);
 
+    FilesDetails updateDataByFilesId(FilesDetails filesDetails);
+
+
     FilesDetailsItemDTO updateData(FilesDetailsItemDTO filesDetails);
 
     List<FilesDetails> getOriginalNameList();
@@ -44,4 +47,6 @@ public interface FilesDetailsService {
     List<FilesDetails> updateFolderCover(List<FilesDetails> list);
 
     void updateStatusByField(UpdateStatusRequestDTO updateStatusRequestDTO);
+
+    void scraperByIds(List<FilesScraperQueryCondition> queryConditions);
 }

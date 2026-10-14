@@ -22,6 +22,8 @@ public class FilesDetailsListQueryCondition extends QueryCondition {
     private Integer overStatus;
     private boolean flattening = true;
 
+    private Integer scraper;
+
     public FilesDetailsListQueryCondition(Integer page) {
         super(page);
     }

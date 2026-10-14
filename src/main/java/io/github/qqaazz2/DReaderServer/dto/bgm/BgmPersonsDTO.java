@@ -1,5 +1,6 @@
 package io.github.qqaazz2.DReaderServer.dto.bgm;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 

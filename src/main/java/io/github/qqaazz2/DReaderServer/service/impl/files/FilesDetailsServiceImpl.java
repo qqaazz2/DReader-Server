@@ -5,13 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesCoverChangeDTO;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsItemDTO;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListDTO;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListQueryCondition;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesOverviewDTO;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesOverviewListDTO;
-import io.github.qqaazz2.DReaderServer.dto.files.UpdateStatusRequestDTO;
+import io.github.qqaazz2.DReaderServer.dto.files.*;
 import io.github.qqaazz2.DReaderServer.service.files.FilesAuthorService;
 import io.github.qqaazz2.DReaderServer.service.files.FilesDetailsService;
 import io.github.qqaazz2.DReaderServer.service.files.FilesTagsService;
@@ -22,10 +16,13 @@ import io.github.qqaazz2.DReaderServer.mapper.files.FilesAuthorMapper;
 import io.github.qqaazz2.DReaderServer.mapper.files.FilesDetailsMapper;
 import io.github.qqaazz2.DReaderServer.mapper.files.FilesTagsMapper;
 import io.github.qqaazz2.DReaderServer.storage.FileAdapterFactory;
+import io.github.qqaazz2.DReaderServer.task.scraper.BaseScraper;
+import io.github.qqaazz2.DReaderServer.task.scraper.ScraperFactory;
 import io.github.qqaazz2.DReaderServer.util.FileTypeUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -56,6 +54,12 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     @Resource
     FileAdapterFactory factory;
 
+    @Resource
+    RedisTemplate redisTemplate;
+
+    @Resource
+    ScraperFactory scraperFactory;
+
     @Override
     public List<FilesDetails> createData(List<FilesDetails> list) {
         Boolean isTrue = this.saveBatch(list);
@@ -66,6 +70,15 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     @Override
     public FilesDetails updateData(FilesDetails filesDetails) {
         Boolean isTrue = this.updateById(filesDetails);
+        if (!isTrue) throw new BizException("4000", "编辑文件信息失败");
+        return filesDetails;
+    }
+
+    @Override
+    public FilesDetails updateDataByFilesId(FilesDetails filesDetails) {
+        LambdaUpdateWrapper<FilesDetails> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(FilesDetails::getFilesId, filesDetails.getFilesId());
+        Boolean isTrue = this.update(filesDetails, updateWrapper);
         if (!isTrue) throw new BizException("4000", "编辑文件信息失败");
         return filesDetails;
     }
@@ -245,12 +258,25 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
 
     @Override
     public void updateStatusByField(UpdateStatusRequestDTO updateStatusRequestDTO) {
-        if (!List.of("status", "love", "overStatus").contains(updateStatusRequestDTO.getField())) throw new BizException("更新状态失败，非法字段");
+        if (!List.of("status", "love", "overStatus").contains(updateStatusRequestDTO.getField()))
+            throw new BizException("更新状态失败，非法字段");
         UpdateWrapper<FilesDetails> updateWrapper = new UpdateWrapper<FilesDetails>();
         updateWrapper.set(updateStatusRequestDTO.getField(), updateStatusRequestDTO.getStatus());
         System.out.println(updateStatusRequestDTO.getIds());
         updateWrapper.in("id", updateStatusRequestDTO.getIds());
         if (!this.update(updateWrapper)) throw new BizException("4000", "更新状态失败");
+    }
+
+    @Override
+    public void scraperByIds(List<FilesScraperQueryCondition> list) {
+        Map<Integer, Integer> map = list.stream().collect(Collectors.toMap(FilesScraperQueryCondition::getId, item -> item.getSelectId() == null ? -1 : item.getSelectId()));
+        List<FilesDetails> filesDetailsList = filesDetailsMapper.getListByIds(map.keySet());
+        if (filesDetailsList.isEmpty()) throw new BizException("4000", "数据错误，请重新扫描书籍");
+        filesDetailsList.forEach(item -> {
+            item.setUserSelectMatchId(map.get(item.getId()));
+            redisTemplate.opsForList().rightPush("scrape_queue", item);
+        });
+        if (!scraperFactory.getScraper().getRunning().get()) scraperFactory.getScraper().startOrRestart();
     }
 
     @Override
