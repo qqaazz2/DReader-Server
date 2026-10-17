@@ -20,7 +20,7 @@ public interface FilesDetailsMapper extends BaseMapper<FilesDetails> {
 
     List<Integer> getStatusByParentId(Long id);
 
-    FilesDetailsListDTO getRecent();
+    List<FilesDetailsListDTO> getRecent();
 
     List<FilesCoverChangeDTO> randomValidFiles();
 

@@ -133,8 +133,8 @@ public class FilesDetailsServiceImpl extends ServiceImpl<FilesDetailsMapper, Fil
     }
 
     @Override
-    public FilesDetailsListDTO getRecent() {
-        FilesDetailsListDTO filesDetailsListDTO = filesDetailsMapper.getRecent();
+    public List<FilesDetailsListDTO> getRecent() {
+        List<FilesDetailsListDTO> filesDetailsListDTO = filesDetailsMapper.getRecent();
         return filesDetailsListDTO;
     }
 

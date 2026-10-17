@@ -26,7 +26,7 @@ public interface FilesDetailsService {
 
     PageVO<FilesDetailsListDTO> getList(FilesDetailsListQueryCondition filesDetailsListQueryCondition);
 
-    FilesDetailsListDTO getRecent();
+    List<FilesDetailsListDTO> getRecent();
 
     FilesDetailsListDTO randomData();
 
