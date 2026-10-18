@@ -1,10 +1,12 @@
 package io.github.qqaazz2.DReaderServer.controller;
 
 import io.github.qqaazz2.DReaderServer.common.ResultResponse;
+import io.github.qqaazz2.DReaderServer.dto.ChangeProxyDTO;
 import io.github.qqaazz2.DReaderServer.dto.UserInfo;
 import io.github.qqaazz2.DReaderServer.entity.User;
 import io.github.qqaazz2.DReaderServer.service.UserService;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -81,6 +83,12 @@ public class UserController {
     @GetMapping("/changeScraper")
     public ResultResponse changeScraper(@RequestParam String adapter) {
         userService.changeScraper(adapter);
+        return ResultResponse.success();
+    }
+
+    @PostMapping("/changeProxy")
+    public ResultResponse changeProxy(@RequestBody @Valid ChangeProxyDTO changeProxyDTO) {
+        userService.changeProxy(changeProxyDTO);
         return ResultResponse.success();
     }
 }

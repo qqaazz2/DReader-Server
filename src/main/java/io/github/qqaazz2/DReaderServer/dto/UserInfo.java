@@ -13,4 +13,7 @@ public class UserInfo {
     private String newPassWord;
     private String archiveId;
     private String scraper;
+    private Short proxyEnabled;
+    private String proxyHost;
+    private Short proxyPort;
 }

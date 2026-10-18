@@ -23,6 +23,9 @@ public class User implements Serializable {
     private String fileAdapter;
     private String scraper;
     private String archiveId;
+    private Short proxyEnabled;
+    private String proxyHost;
+    private Short proxyPort;
 
 
     //验证码

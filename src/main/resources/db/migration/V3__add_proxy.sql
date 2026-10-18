@@ -1,0 +1,8 @@
+SET FOREIGN_KEY_CHECKS=0;
+
+ALTER TABLE `dreaderserver`.`user`
+    ADD COLUMN `proxy_enabled` TINYINT(1) NOT NULL DEFAULT 2 COMMENT '是否开启代理 1开启 2关闭',
+    ADD COLUMN `proxy_host` VARCHAR(255) DEFAULT NULL COMMENT '代理地址',
+    ADD COLUMN `proxy_port` INT DEFAULT NULL COMMENT '代理端口';
+
+SET FOREIGN_KEY_CHECKS=1;

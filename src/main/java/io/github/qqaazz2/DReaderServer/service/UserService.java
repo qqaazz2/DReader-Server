@@ -1,6 +1,7 @@
 package io.github.qqaazz2.DReaderServer.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.github.qqaazz2.DReaderServer.dto.ChangeProxyDTO;
 import io.github.qqaazz2.DReaderServer.dto.UserInfo;
 import io.github.qqaazz2.DReaderServer.entity.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +31,8 @@ public interface UserService extends IService<User> {
     void changeFileAdapter(String adapter,String scraper);
 
     void changeScraper(String scraper);
+
+    void changeProxy(ChangeProxyDTO changeProxyDTO);
 
     List<String> getScraper();
 

@@ -3,6 +3,8 @@ package io.github.qqaazz2.DReaderServer.service.impl;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.qqaazz2.DReaderServer.common.BizException;
+import io.github.qqaazz2.DReaderServer.config.WebClientConfig;
+import io.github.qqaazz2.DReaderServer.dto.ChangeProxyDTO;
 import io.github.qqaazz2.DReaderServer.dto.UserInfo;
 import io.github.qqaazz2.DReaderServer.entity.LoginUser;
 import io.github.qqaazz2.DReaderServer.entity.User;
@@ -16,6 +18,7 @@ import io.github.qqaazz2.DReaderServer.util.FileTypeUtils;
 import com.wf.captcha.SpecCaptcha;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -55,6 +58,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Resource
     List<BaseScraper> scrapers;
 
+    @Resource
+    WebClientConfig webClientConfig;
+
     private static final String codeKey = "CodeKey:";
 
     @Override
@@ -65,13 +71,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String token = tokenService.createToken(loginUser.getUser());
 
         UserInfo userInfo = new UserInfo();
-        userInfo.setEmail(loginUser.getUser().getEmail());
-        userInfo.setName(loginUser.getUser().getName());
-        userInfo.setMystery(loginUser.getUser().getMystery());
-        userInfo.setCover(loginUser.getUser().getCover());
-        userInfo.setFileAdapter(loginUser.getUser().getFileAdapter());
-        userInfo.setScraper(loginUser.getUser().getScraper());
-        userInfo.setArchiveId(loginUser.getUser().getArchiveId());
+        BeanUtils.copyProperties(loginUser.getUser(), userInfo);
         Map<String, Object> map = new HashMap<>();
         map.put("token", token);
         map.put("userInfo", userInfo);
@@ -112,13 +112,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
             LoginUser loginUser = (LoginUser) authentication.getPrincipal();
             UserInfo userInfo = new UserInfo();
-            userInfo.setEmail(loginUser.getUser().getEmail());
-            userInfo.setName(loginUser.getUser().getName());
-            userInfo.setMystery(loginUser.getUser().getMystery());
-            userInfo.setCover(loginUser.getUser().getCover());
-            userInfo.setFileAdapter(loginUser.getUser().getFileAdapter());
-            userInfo.setScraper(loginUser.getUser().getScraper());
-            userInfo.setArchiveId(loginUser.getUser().getArchiveId());
+            BeanUtils.copyProperties(loginUser.getUser(), userInfo);
+            webClientConfig.resetInitOver(true);
             return userInfo;
         }
         throw new BizException(ExceptionEnum.SIGNATURE_NOT_MATCH);
@@ -271,6 +266,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             lambdaUpdateWrapper.set(User::getScraper, scraper);
             if (!this.update(lambdaUpdateWrapper)) throw new BizException("4000", "修改刮削器失败");
             user.setScraper(scraper);
+            tokenService.updateToken(user);
+        } else {
+            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public void changeProxy(ChangeProxyDTO changeProxyDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof LoginUser) {
+            if (changeProxyDTO.getProxyEnable() == 1) {
+                if (changeProxyDTO.getProxyHost() == null || changeProxyDTO.getProxyHost().isBlank())throw new IllegalArgumentException("代理地址不能为空");
+                if (changeProxyDTO.getProxyPort() == null || changeProxyDTO.getProxyPort() < 1 || changeProxyDTO.getProxyPort() > 65535)  throw new IllegalArgumentException("代理端口不合法");
+            }
+            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+            User user = loginUser.getUser();
+            LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+            lambdaUpdateWrapper.eq(User::getId, user.getId());
+            lambdaUpdateWrapper.set(User::getProxyEnabled, changeProxyDTO.getProxyEnable());
+            lambdaUpdateWrapper.set(User::getProxyHost, changeProxyDTO.getProxyHost());
+            lambdaUpdateWrapper.set(User::getProxyPort, changeProxyDTO.getProxyPort());
+            if (!this.update(lambdaUpdateWrapper)) throw new BizException("4000", "更新代理设置失败");
+            user.setProxyEnabled(changeProxyDTO.getProxyEnable());
+            user.setProxyHost(changeProxyDTO.getProxyHost());
+            user.setProxyPort(changeProxyDTO.getProxyPort());
+            webClientConfig.resetInitOver(true);
             tokenService.updateToken(user);
         } else {
             throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR);

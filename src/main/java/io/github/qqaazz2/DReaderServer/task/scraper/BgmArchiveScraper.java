@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.qqaazz2.DReaderServer.common.BizException;
+import io.github.qqaazz2.DReaderServer.config.WebClientConfig;
 import io.github.qqaazz2.DReaderServer.entity.LoginUser;
 import io.github.qqaazz2.DReaderServer.entity.User;
 import io.github.qqaazz2.DReaderServer.entity.scraper.ScraperPerson;
@@ -41,12 +42,7 @@ import java.util.zip.ZipInputStream;
 @Component
 public class BgmArchiveScraper extends BaseScraper {
     @Resource
-    @Qualifier("githubWebClient")
-    WebClient webClient;
-
-    @Resource
-    @Qualifier("bgmWebClient")
-    WebClient bgmWebClient;
+    WebClientConfig webClient;
 
     @Resource
     ScraperSubjectService bgmSubjectService;
@@ -86,7 +82,7 @@ public class BgmArchiveScraper extends BaseScraper {
         synchronized (LOCK) {
             try {
                 if (init) return;
-                ArchiveAUXResponse response = webClient.get()
+                ArchiveAUXResponse response = webClient.githubWebClient().get()
                         .uri("https://raw.githubusercontent.com/bangumi/Archive/master/aux/latest.json")
                         .retrieve()
                         .bodyToMono(String.class)
@@ -112,7 +108,7 @@ public class BgmArchiveScraper extends BaseScraper {
                 recreateTable();
 
                 log.info("开始下载：{}", downloadPath);
-                webClient.get() .uri(response.browserDownloadUrl) .retrieve() .bodyToFlux(DataBuffer.class) .as(flux -> DataBufferUtils.write( flux, downloadPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING )) .doOnError(e -> log.error(e.toString())) .block();
+                webClient.githubWebClient().get() .uri(response.browserDownloadUrl) .retrieve() .bodyToFlux(DataBuffer.class) .as(flux -> DataBufferUtils.write( flux, downloadPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING )) .doOnError(e -> log.error(e.toString())) .block();
                 log.info("下载完成：{}，存在：{}，大小：{}", downloadPath, Files.exists(downloadPath), Files.size(downloadPath));
 
                 unzip(downloadPath);
@@ -242,7 +238,7 @@ public class BgmArchiveScraper extends BaseScraper {
     @Override
     public String getAuthorAvatarPath(Integer authorId) {
         FileAdapterService fileAdapterService = factory.getFileAdapter();
-        byte[] imageBytes = bgmWebClient.get().uri("https://api.bgm.tv/v0/persons/" + authorId + "/image?type=large").retrieve().bodyToMono(byte[].class).timeout(Duration.ofSeconds(10)).retry(3).block();
+        byte[] imageBytes = webClient.bgmWebClient().get().uri("https://api.bgm.tv/v0/persons/" + authorId + "/image?type=large").retrieve().bodyToMono(byte[].class).timeout(Duration.ofSeconds(10)).retry(3).block();
         if (imageBytes != null) {
             String path = fileAdapterService.uploadSplicing(imageBytes, "/authorAvatar/" + authorId + ".jpg", "image/jpeg");
             imageBytes = null;
