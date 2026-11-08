@@ -14,6 +14,7 @@
         <result column="is_folder" property="isFolder"/>
         <result column="parent_id" property="parentId"/>
         <result column="file_path" property="filePath"/>
+        <result column="hash" property="hash"/>
     </resultMap>
 
     <resultMap id="filesCoverList" type="io.github.qqaazz2.DReaderServer.dto.files.FilesCoverChangeDTO">
@@ -49,6 +50,7 @@
         <result column="original_name" property="originalName"/>
         <result column="file_path" property="filePath"/>
         <result column="parent_id" property="parentId"/>
+        <result column="hash" property="hash"/>
     </resultMap>
 
     <select id="getList" resultMap="fileDetailsList" parameterType="io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListQueryCondition">
@@ -62,7 +64,8 @@
             files_details.files_id,
             files.is_folder,
             parent_id,
-            file_path
+            file_path,
+            `hash`
         FROM
             files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
@@ -154,7 +157,8 @@
         files_details.date,
         files_details.original_name,
         parent_id,
-        file_path
+        file_path,
+        `hash`
         FROM
         files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
@@ -174,7 +178,8 @@
         files_details.files_id,
         files.is_folder,
         parent_id,
-        file_path
+        file_path,
+        `hash`
         FROM
         files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
@@ -240,7 +245,8 @@
         files_details.files_id,
         files.is_folder,
         parent_id,
-        file_path
+        file_path,
+        `hash`
         FROM
         files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1
@@ -259,7 +265,7 @@
         files_details.files_id,
         files.is_folder,
         parent_id,
-        file_path
+        file_path,
         FROM
         files_details
         INNER JOIN files ON files_details.files_id = files.id AND files.deleted = 1

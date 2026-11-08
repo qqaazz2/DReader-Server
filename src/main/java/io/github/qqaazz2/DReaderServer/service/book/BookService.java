@@ -1,5 +1,6 @@
 package io.github.qqaazz2.DReaderServer.service.book;
 
+import io.github.qqaazz2.DReaderServer.dto.files.SyncProgressItem;
 import io.github.qqaazz2.DReaderServer.entity.book.Book;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,8 @@ public interface BookService {
 //    Book updateData(Book book);
 //
     Map<String,Object> updateProgress(Book book);
+
+    void syncProgress(List<SyncProgressItem> list);
 //
 //    List<BookCoverDTO> getCoverList(Integer id);
 //

@@ -2,18 +2,17 @@ package io.github.qqaazz2.DReaderServer.controller.files;
 
 import com.baomidou.mybatisplus.core.conditions.update.Update;
 import io.github.qqaazz2.DReaderServer.common.ResultResponse;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsItemDTO;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesDetailsListQueryCondition;
-import io.github.qqaazz2.DReaderServer.dto.files.FilesScraperQueryCondition;
-import io.github.qqaazz2.DReaderServer.dto.files.UpdateStatusRequestDTO;
+import io.github.qqaazz2.DReaderServer.dto.files.*;
 import io.github.qqaazz2.DReaderServer.service.files.FilesDetailsService;
 import io.github.qqaazz2.DReaderServer.service.files.FilesService;
 //import io.github.qqaazz2.DReaderServer.entity.book.Series;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 
@@ -91,8 +90,13 @@ public class FilesController {
     }
 
     @PostMapping("/scraperByIds")
-    public ResultResponse scraperByIds(@RequestBody List<@Valid FilesScraperQueryCondition> list){
+    public ResultResponse scraperByIds(@RequestBody List<@Valid FilesScraperQueryCondition> list) {
         filesDetailsService.scraperByIds(list);
         return ResultResponse.success(null, "书籍信息扫描任务已提交，系统将在后台处理中");
+    }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<StreamingResponseBody> download(@PathVariable Long id, @RequestHeader(value = "range", required = false) String range) {
+        return filesService.download(id, range);
     }
 }

@@ -3,7 +3,9 @@ package io.github.qqaazz2.DReaderServer.service.files;
 import io.github.qqaazz2.DReaderServer.dto.setting.ProportionDTO;
 import io.github.qqaazz2.DReaderServer.dto.setting.TimeCountDTO;
 import io.github.qqaazz2.DReaderServer.entity.files.Files;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 import java.util.Map;
@@ -30,4 +32,6 @@ public interface FilesService {
     Map<String,Object> getFilesCount();
 
     List<TimeCountDTO> getYearMonth();
+
+    ResponseEntity<StreamingResponseBody> download(Long id, String range);
 }

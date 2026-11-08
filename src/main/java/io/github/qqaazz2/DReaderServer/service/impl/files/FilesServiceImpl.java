@@ -16,11 +16,20 @@ import io.github.qqaazz2.DReaderServer.mapper.files.FilesMapper;
 import io.github.qqaazz2.DReaderServer.util.ValidationUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -189,5 +198,85 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files> implements
         }).toList();
 
         return timeCountDTOList;
+    }
+
+//    @Override
+//    public ResponseEntity<StreamingResponseBody> download(Long id, String range) {
+//        try {
+//            Files files = this.getById(id);
+//            if (files == null) throw new BizException("4000", "文件不存在");
+//            Path path = Paths.get(files.getFilePath());
+//            if (!java.nio.file.Files.exists(path) || !java.nio.file.Files.isRegularFile(path))
+//                throw new BizException("4000", "文件路径错误");
+//            long fileSize = java.nio.file.Files.size(path);
+//            long start = 0, end = fileSize - 1;
+//            try {
+//                if (range != null || range.startsWith("bytes=")) {
+//                    String[] ranges = range.substring(6).split("-", -1);
+//                    if (ranges.length != 2 || ranges[0].isBlank()) throw new BizException("4000", "文件断点下载失败");
+//                    start = Long.parseLong(ranges[0]);
+//                    if (!ranges[1].isBlank()) end = Long.parseLong(ranges[1]);
+//                    if (start < 0 || start >= fileSize || end < fileSize || end >= fileSize)
+//                        throw new BizException("4000", "文件断点下载失败");
+//                }
+//            } catch (RuntimeException e) {
+//                HttpHeaders headers = new HttpHeaders();
+//                headers.set(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
+//                return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE).headers(headers).build();
+//            }
+//            final long fileStart = start;
+//            long contentLength = fileSize - 1;
+//            boolean isRange = range != null;
+//            StreamingResponseBody body = outputStream -> {
+//                try (RandomAccessFile randomAccessFile = new RandomAccessFile(files.getFilePath(), "r")) {
+//                    randomAccessFile.seek(fileStart);
+//                    byte[] buffer = new byte[8096];
+//                    int len;
+//                    long remaining = contentLength;
+//                    while (remaining > 0 && (len = randomAccessFile.read(buffer, 0, (int) Math.min(buffer.length, remaining))) != -1) {
+//                        outputStream.write(buffer, 0, len);
+//                        remaining -= len;
+//                    }
+//                }
+//            };
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
+//            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+//            headers.set(HttpHeaders.ETAG, files.getHash());
+//            headers.setContentLength(contentLength);
+//            if (isRange) headers.set(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + fileSize);
+//            return ResponseEntity.status(isRange ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK).headers(headers).body(body);
+//        } catch (RuntimeException | IOException e) {
+//            throw new BizException("4000", e.getMessage());
+//        }
+//    }
+
+    @Override
+    public ResponseEntity<StreamingResponseBody> download(Long id, String range) {
+        try {
+            Files files = this.getById(id);
+            if (files == null) throw new BizException("4000", "文件不存在");
+            Path path = Paths.get(files.getFilePath());
+            if (!java.nio.file.Files.exists(path) || !java.nio.file.Files.isRegularFile(path)) throw new BizException("4000", "文件路径错误");
+            long fileSize = java.nio.file.Files.size(path);
+            StreamingResponseBody body = outputStream -> {
+                try (RandomAccessFile randomAccessFile = new RandomAccessFile(files.getFilePath(), "r")) {
+                    byte[] buffer = new byte[8096];
+                    int len;
+                    long remaining = fileSize;
+                    while (remaining > 0 && (len = randomAccessFile.read(buffer, 0, (int) Math.min(buffer.length, remaining))) != -1) {
+                        outputStream.write(buffer, 0, len);
+                        remaining -= len;
+                    }
+                }
+            };
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.set(HttpHeaders.ETAG, files.getHash());
+            headers.setContentLength(fileSize);
+            return ResponseEntity.status(HttpStatus.OK).headers(headers).body(body);
+        } catch (RuntimeException | IOException e) {
+            throw new BizException("4000", e.getMessage());
+        }
     }
 }

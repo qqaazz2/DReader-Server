@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.qqaazz2.DReaderServer.common.BizException;
+import io.github.qqaazz2.DReaderServer.dto.files.SyncProgressItem;
 import io.github.qqaazz2.DReaderServer.entity.book.Book;
+import io.github.qqaazz2.DReaderServer.entity.files.Files;
 import io.github.qqaazz2.DReaderServer.entity.files.FilesDetails;
 import io.github.qqaazz2.DReaderServer.mapper.book.BookMapper;
 //import io.github.qqaazz2.DReaderServer.mapper.book.SeriesMapper;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -90,14 +93,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         updateWrapper.eq(Book::getId, book.getId()).set(Book::getProgress, book.getProgress()).set(Book::getReadTagNum, book.getReadTagNum());
         Boolean isTrue = this.update(updateWrapper);
         if (!isTrue) throw new BizException("4000", "阅读进度修改失败");
-        int status;
-        if (book.getProgress() == 0) {
-            status = 1;
-        } else if (book.getProgress() > 0 && book.getProgress() < 1) {
-            status = 3;
-        } else {
-            status = 2;
-        }
+        int status = getStatus(book.getProgress());
 
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -112,6 +108,62 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         map.put("lastReadTime", formatted);
         map.put("status", status);
         return map;
+    }
+
+    @Override
+    @Transactional
+    public void syncProgress(List<SyncProgressItem> list) {
+        Map<String, SyncProgressItem> syncProgressItemMap = list.stream().collect(Collectors.toMap(SyncProgressItem::getHash, item -> item));
+        Set<String> hashSet = syncProgressItemMap.keySet();
+        LambdaQueryWrapper<Files> filesLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        filesLambdaQueryWrapper.in(Files::getHash, hashSet);
+        List<Files> filesList = filesMapper.selectList(filesLambdaQueryWrapper);
+        if (filesList.isEmpty()) throw new BizException("4000", "书籍查询失败，请稍后再试");
+
+        LambdaQueryWrapper<Book> bookLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        bookLambdaQueryWrapper.in(Book::getFilesId, filesList.stream().map(item -> item.getId()).collect(Collectors.toList()));
+        List<Book> bookList = this.list(bookLambdaQueryWrapper);
+        Map<Long, Book> bookMap = bookList.stream().collect(Collectors.toMap(Book::getFilesId, item -> item));
+
+        List<Book> addList = new ArrayList<>();
+        for (Files files : filesList) {
+            if (!hashSet.contains(files.getHash())) continue;
+            Book book = bookMap.get(files.getId());
+            SyncProgressItem item = syncProgressItemMap.get(files.getHash());
+            if (book != null) {
+                if(item.getProgress() == book.getProgress()) continue;
+                LambdaUpdateWrapper<Book> updateWrapper = new LambdaUpdateWrapper();
+                updateWrapper.eq(Book::getId, book.getId()).set(Book::getProgress, item.getProgress()).set(Book::getReadTagNum, item.getReadTagNum());
+                if(!this.update(updateWrapper)) throw new BizException("4000", "阅读进度同步失败1，请稍后再试");
+                UpdateWrapper<FilesDetails> filesDetailsUpdateWrapper = new UpdateWrapper<>();
+                filesDetailsUpdateWrapper.set("status", getStatus(item.getProgress()));
+                filesDetailsUpdateWrapper.eq("files_id", book.getFilesId());
+                if(filesDetailsMapper.update(filesDetailsUpdateWrapper) == 0)throw new BizException("4000", "阅读进度同步失败2，请稍后再试");
+                continue;
+            }
+            book.setProgress(item.getProgress());
+            book.setReadTagNum(item.getReadTagNum());
+            book.setFilesId(files.getId());
+            addList.add(book);
+            UpdateWrapper<FilesDetails> filesDetailsUpdateWrapper = new UpdateWrapper<>();
+            filesDetailsUpdateWrapper.set("status", getStatus(item.getProgress()));
+            filesDetailsUpdateWrapper.eq("files_id", book.getFilesId());
+            if(filesDetailsMapper.update(filesDetailsUpdateWrapper) == 0)throw new BizException("4000", "阅读进度同步失败2，请稍后再试");
+        }
+        if(addList.isEmpty())return;
+        if(!this.saveBatch(addList)) throw new BizException("4000", "阅读进度同步失败3，请稍后再试");
+    }
+
+    private Integer getStatus(Double progress){
+        int status;
+        if (progress == 0) {
+            status = 1;
+        } else if (progress > 0 && progress < 1) {
+            status = 3;
+        } else {
+            status = 2;
+        }
+        return  status;
     }
 //
 //

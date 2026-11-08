@@ -19,4 +19,5 @@ public class FilesDetailsListDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long parentId;
     private String filePath;
+    private String hash;
 }

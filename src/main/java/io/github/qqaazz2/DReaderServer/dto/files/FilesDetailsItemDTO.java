@@ -26,6 +26,7 @@ public class FilesDetailsItemDTO {
     private String filePath;
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long parentId;
+    private String hash;
 
     private List<FilesDetailsAuthor> filesAuthors = new ArrayList<>();
     private List<FilesDetailsTag> filesTags = new ArrayList<>();

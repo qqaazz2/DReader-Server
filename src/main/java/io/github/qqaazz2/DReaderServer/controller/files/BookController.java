@@ -1,26 +1,32 @@
 package io.github.qqaazz2.DReaderServer.controller.files;
 
 import io.github.qqaazz2.DReaderServer.common.ResultResponse;
+import io.github.qqaazz2.DReaderServer.dto.files.SyncProgressItem;
 import io.github.qqaazz2.DReaderServer.entity.book.Book;
 import io.github.qqaazz2.DReaderServer.service.book.BookService;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
 @RequestMapping("/book")
 public class BookController {
 
-//
+    //
     @Resource
-BookService bookService;
-//
+    BookService bookService;
+
+    //
     @GetMapping("getData")
     public ResultResponse getData(@RequestParam Long filesId) {
         return ResultResponse.success(bookService.getData(filesId));
     }
-//
+
+    //
 //    @PostMapping("updateData")
 //    public ResultResponse updateData(@RequestBody @Validated({Update.class}) Book book) {
 //        bookService.updateData(book);
@@ -30,6 +36,12 @@ BookService bookService;
     @PostMapping("updateProgress")
     public ResultResponse updateProgress(@RequestBody Book book) {
         return ResultResponse.success(bookService.updateProgress(book));
+    }
+
+    @PostMapping("syncProgress")
+    public ResultResponse syncProgress(@RequestBody List<@Valid SyncProgressItem> list) {
+        bookService.syncProgress(list);
+        return ResultResponse.success();
     }
 //
 //    @GetMapping("getCoverList")
